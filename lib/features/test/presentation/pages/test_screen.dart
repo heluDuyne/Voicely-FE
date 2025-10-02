@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 class TestPage extends StatefulWidget {
@@ -9,16 +10,22 @@ class TestPage extends StatefulWidget {
 
 class _TestPageState extends State<TestPage> {
   String transcribedText = "";
-
-  void importAudioFile() {
-    // TODO: Implement logic to import MP3 audio file
-  }
+  String? selectedFilePath;
 
   void transcribeAudio() {
     // TODO: Implement logic to transcribe audio file
     setState(() {
       transcribedText = "Transcribed text will appear here.";
     });
+  }
+
+  void _pickFile() async {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        selectedFilePath = result.files.single.path;
+      });
+    }
   }
 
   @override
@@ -30,15 +37,19 @@ class _TestPageState extends State<TestPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ElevatedButton(
-              onPressed: importAudioFile,
-              child: const Text('Import MP3 Audio File'),
-            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: transcribeAudio,
               child: const Text('Transcript'),
             ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _pickFile,
+              child: const Text('Pick File'),
+            ),
+            const SizedBox(height: 16),
+            if (selectedFilePath != null)
+              Text('Selected File: $selectedFilePath'),
             const SizedBox(height: 16),
             TextField(
               controller: TextEditingController(text: transcribedText),

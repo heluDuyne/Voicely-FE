@@ -57,6 +57,12 @@ dependencies:
   # Functional programming
   dartz: ^0.10.1
 
+  #audio
+  audioplayers: ^6.5.1
+
+  # File picking
+  file_picker: ^10.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

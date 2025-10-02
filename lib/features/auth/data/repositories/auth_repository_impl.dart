@@ -19,12 +19,15 @@ class AuthRepositoryImpl implements AuthRepository {
   });
 
   @override
-  Future<Either<Failure, User>> login(String email, String password) async {
+  Future<Either<Failure, Map<String, String>>> login(
+    String email,
+    String password,
+  ) async {
     if (await networkInfo.isConnected) {
       try {
-        final user = await remoteDataSource.login(email, password);
-        await localDataSource.cacheUser(user);
-        return Right(user);
+        final tokens = await remoteDataSource.login(email, password);
+        await localDataSource.cacheTokens(tokens);
+        return Right(tokens);
       } on ServerException catch (e) {
         return Left(ServerFailure(e.message));
       } on NetworkException catch (e) {
@@ -38,16 +41,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, User>> signup(
+  Future<Either<Failure, Map<String, String>>> signup(
     String name,
     String email,
     String password,
   ) async {
     if (await networkInfo.isConnected) {
       try {
-        final user = await remoteDataSource.signup(name, email, password);
-        await localDataSource.cacheUser(user);
-        return Right(user);
+        final tokens = await remoteDataSource.signup(name, email, password);
+        await localDataSource.cacheTokens(tokens);
+        return Right(tokens);
       } on ServerException catch (e) {
         return Left(ServerFailure(e.message));
       } on NetworkException catch (e) {
@@ -77,6 +80,47 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right(user);
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, String>>> refresh(
+    String refreshToken,
+  ) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final tokens = await remoteDataSource.refresh(refreshToken);
+        await localDataSource.cacheTokens(tokens);
+        return Right(tokens);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on ValidationException catch (e) {
+        return Left(ValidationFailure(e.message));
+      }
+    } else {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> fetchCurrentUser(
+    String accessToken,
+  ) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final userInfo = await remoteDataSource.getCurrentUser(accessToken);
+        return Right(userInfo);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on UnauthorizedException catch (e) {
+        return Left(UnauthorizedFailure(e.message));
+      }
+    } else {
+      return const Left(NetworkFailure('No internet connection'));
     }
   }
 }

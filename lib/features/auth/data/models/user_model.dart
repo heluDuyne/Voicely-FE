@@ -2,20 +2,28 @@ import '../../domain/entities/user.dart';
 
 class UserModel extends User {
   const UserModel({
-    required super.id,
-    required super.email,
-    required super.name,
-    super.avatar,
-    required super.createdAt,
-  });
+    required String id,
+    required String email,
+    required bool isActive,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super(
+         id: id,
+         email: email,
+         name: '', // Default value for name
+         avatar: null, // Default value for avatar
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+         isActive: isActive,
+       );
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'],
       email: json['email'],
-      name: json['name'],
-      avatar: json['avatar'],
+      isActive: json['is_active'],
       createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
     );
   }
 
@@ -23,9 +31,9 @@ class UserModel extends User {
     return {
       'id': id,
       'email': email,
-      'name': name,
-      'avatar': avatar,
+      'is_active': isActive,
       'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 }

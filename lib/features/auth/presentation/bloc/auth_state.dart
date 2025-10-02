@@ -12,12 +12,16 @@ class AuthInitial extends AuthState {}
 class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
-  final User user;
+  final String accessToken;
+  final String refreshToken;
 
-  const AuthAuthenticated(this.user);
+  const AuthAuthenticated({
+    required this.accessToken,
+    required this.refreshToken,
+  });
 
   @override
-  List<Object> get props => [user];
+  List<Object> get props => [accessToken, refreshToken];
 }
 
 class AuthUnauthenticated extends AuthState {}

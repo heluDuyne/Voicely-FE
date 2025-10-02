@@ -12,6 +12,7 @@ abstract class AuthLocalDataSource {
   Future<void> setAccessToken(String token);
   Future<String?> getRefreshToken();
   Future<void> setRefreshToken(String token);
+  Future<void> cacheTokens(Map<String, String> tokens);
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
@@ -73,5 +74,21 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   @override
   Future<void> setRefreshToken(String token) async {
     await sharedPreferences.setString(AppConstants.refreshTokenKey, token);
+  }
+
+  @override
+  Future<void> cacheTokens(Map<String, String> tokens) async {
+    try {
+      await sharedPreferences.setString(
+        AppConstants.accessTokenKey,
+        tokens['access_token']!,
+      );
+      await sharedPreferences.setString(
+        AppConstants.refreshTokenKey,
+        tokens['refresh_token']!,
+      );
+    } catch (e) {
+      throw CacheException('Failed to cache tokens');
+    }
   }
 }

@@ -7,7 +7,7 @@ class NetworkClient {
   NetworkClient() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: AppConstants.baseUrl + AppConstants.apiVersion,
+        baseUrl: AppConstants.baseUrl,
         connectTimeout: const Duration(
           milliseconds: AppConstants.connectionTimeout,
         ),

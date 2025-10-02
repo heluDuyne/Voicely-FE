@@ -1,11 +1,12 @@
 class AppConstants {
   // API
-  static const String baseUrl = 'https://api.voicely.com';
-  static const String apiVersion = '/v1';
+  static const String baseUrl =
+      'https://congregational-bula-coaxingly.ngrok-free.dev';
+  // static const String apiVersion = '/v1'; // Commented out API version prefix
 
   // Endpoints
   static const String loginEndpoint = '/auth/login';
-  static const String signupEndpoint = '/auth/signup';
+  static const String signupEndpoint = '/auth/register';
   static const String refreshTokenEndpoint = '/auth/refresh';
 
   // Storage keys

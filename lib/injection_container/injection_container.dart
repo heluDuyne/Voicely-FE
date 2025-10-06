@@ -14,6 +14,14 @@ import '../features/auth/domain/usecases/login_user.dart';
 import '../features/auth/domain/usecases/signup_user.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
 
+// Features - Transcription
+import '../features/transcription/data/datasources/transcription_remote_data_source.dart';
+import '../features/transcription/data/repositories/transcription_repository_impl.dart';
+import '../features/transcription/domain/repositories/transcription_repository.dart';
+import '../features/transcription/domain/usecases/upload_audio.dart';
+import '../features/transcription/domain/usecases/transcribe_audio.dart';
+import '../features/transcription/presentation/bloc/transcription_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -39,8 +47,28 @@ Future<void> init() async {
     () => AuthRemoteDataSourceImpl(dio: sl()),
   );
 
-  sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
+  //! Features - Transcription
+  // Bloc
+  sl.registerFactory(
+    () => TranscriptionBloc(uploadAudio: sl(), transcribeAudio: sl()),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => UploadAudio(sl()));
+  sl.registerLazySingleton(() => TranscribeAudio(sl()));
+
+  // Repository
+  sl.registerLazySingleton<TranscriptionRepository>(
+    () => TranscriptionRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<TranscriptionRemoteDataSource>(
+    () => TranscriptionRemoteDataSourceImpl(dio: sl()),
   );
 
   //! Core
@@ -50,6 +78,13 @@ Future<void> init() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
 
-  final networkClient = NetworkClient();
+  // Register AuthLocalDataSource first
+  sl.registerLazySingleton<AuthLocalDataSource>(
+    () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
+  );
+
+  final networkClient = NetworkClient(
+    authLocalDataSource: sl<AuthLocalDataSource>(),
+  );
   sl.registerLazySingleton(() => networkClient.dio);
 }

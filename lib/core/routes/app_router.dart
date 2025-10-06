@@ -10,6 +10,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String test = '/test';
+  static const String transcriptionResult = '/transcription-result';
 }
 
 final GoRouter appRouter = GoRouter(

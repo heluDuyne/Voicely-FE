@@ -5,6 +5,7 @@ import 'injection_container/injection_container.dart' as di;
 import 'core/routes/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/transcription/presentation/bloc/transcription_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +19,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      providers: [BlocProvider<AuthBloc>(create: (_) => di.sl<AuthBloc>())],
+      providers: [
+        BlocProvider<AuthBloc>(create: (_) => di.sl<AuthBloc>()),
+        BlocProvider<TranscriptionBloc>(
+          create: (_) => di.sl<TranscriptionBloc>(),
+        ),
+      ],
       child: MaterialApp.router(
         title: 'Voicely',
         theme: AppTheme.lightTheme,

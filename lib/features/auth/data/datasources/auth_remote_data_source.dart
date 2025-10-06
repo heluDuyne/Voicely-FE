@@ -39,8 +39,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw ServerException('Failed to login: ${response.statusMessage}');
       }
     } catch (e) {
-      if (e is DioError && e.response != null) {
-        log('DioError response: ${e.response!.data}'); // Log error response
+      if (e is DioException && e.response != null) {
+        log('DioException response: ${e.response!.data}'); // Log error response
         if (e.response!.statusCode == 401) {
           throw UnauthorizedException('Invalid credentials');
         } else if (e.response!.statusCode == 400) {
@@ -76,7 +76,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw ServerException('Failed to sign up: ${response.statusMessage}');
       }
     } catch (e) {
-      if (e is DioError && e.response != null) {
+      if (e is DioException && e.response != null) {
         if (e.response!.statusCode == 400) {
           throw ValidationException(
             e.response!.data['detail'] ?? 'Validation error',
@@ -107,7 +107,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         );
       }
     } catch (e) {
-      if (e is DioError && e.response != null) {
+      if (e is DioException && e.response != null) {
         if (e.response!.statusCode == 400) {
           throw ValidationException(
             e.response!.data['detail'] ?? 'Validation error',
@@ -134,7 +134,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         );
       }
     } catch (e) {
-      if (e is DioError && e.response != null) {
+      if (e is DioException && e.response != null) {
         if (e.response!.statusCode == 401) {
           throw UnauthorizedException('Invalid or expired token');
         }

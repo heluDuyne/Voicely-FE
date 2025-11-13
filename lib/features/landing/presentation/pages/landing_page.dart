@@ -7,121 +7,101 @@ class LandingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700;
+
     return Scaffold(
+      backgroundColor: const Color(0xFF101822),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth > 600 ? screenWidth * 0.15 : 24.0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Spacer(flex: 2),
+              const Spacer(flex: 3),
               // App Logo/Icon
-              Container(
-                height: 120,
-                width: 120,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(60),
-                  border: Border.all(
-                    color: Theme.of(context).primaryColor.withOpacity(0.2),
-                    width: 2,
+              Center(
+                child: Container(
+                  height: isSmallScreen ? 72 : 88,
+                  width: isSmallScreen ? 72 : 88,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF3B82F6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.mic,
+                    size: isSmallScreen ? 36 : 44,
+                    color: Colors.white,
                   ),
                 ),
-                child: Icon(
-                  Icons.mic,
-                  size: 60,
-                  color: Theme.of(context).primaryColor,
-                ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: isSmallScreen ? 32 : 40),
               // App Title
-              Text(
-                'Voicely',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              const Text(
+                'Welcome to Voicely',
+                style: TextStyle(
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               // App Description
               Text(
-                'Transform your voice into powerful communication',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                'Capture every word, effortlessly.',
+                style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Connect, create, and communicate with the power of voice technology',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-                textAlign: TextAlign.center,
-              ),
-              const Spacer(flex: 3),
-              // Action Buttons
-              ElevatedButton(
-                onPressed: () => context.go(AppRoutes.signup),
-                child: const Text('Get Started'),
+              const Spacer(flex: 4),
+              // Sign Up Button
+              SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () => context.go(AppRoutes.signup),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B82F6),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Sign Up',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () => context.go(AppRoutes.login),
-                child: const Text('I already have an account'),
+              // Log In Button
+              SizedBox(
+                height: 56,
+                child: OutlinedButton(
+                  onPressed: () => context.go(AppRoutes.login),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFF282E39),
+                    foregroundColor: Colors.white,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Log In',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
-              const SizedBox(height: 32),
-              // Features
-              _buildFeaturesList(context),
-              const Spacer(),
-              // Footer
-              Text(
-                '© 2024 Voicely. All rights reserved.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey[400]),
-                textAlign: TextAlign.center,
-              ),
+              SizedBox(height: isSmallScreen ? 32 : 48),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildFeaturesList(BuildContext context) {
-    final features = [
-      {'icon': Icons.record_voice_over, 'text': 'Voice Recognition'},
-      {'icon': Icons.translate, 'text': 'Real-time Translation'},
-      {'icon': Icons.security, 'text': 'Secure & Private'},
-    ];
-
-    return Column(
-      children:
-          features
-              .map(
-                (feature) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Icon(
-                        feature['icon'] as IconData,
-                        size: 20,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        feature['text'] as String,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-              .toList(),
     );
   }
 }

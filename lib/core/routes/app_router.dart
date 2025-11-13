@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
+import '../../features/auth/presentation/pages/forgot_password_screen.dart';
 import '../../features/landing/presentation/pages/landing_page.dart';
 import '../../features/test/presentation/pages/test_screen.dart';
 
@@ -9,6 +10,7 @@ class AppRoutes {
   static const String landing = '/';
   static const String login = '/login';
   static const String signup = '/signup';
+  static const String forgotPassword = '/forgot-password';
   static const String test = '/test';
   static const String transcriptionResult = '/transcription-result';
 }
@@ -30,6 +32,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.signup,
       name: 'signup',
       builder: (context, state) => const SignupPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.forgotPassword,
+      name: 'forgotPassword',
+      builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(
       path: AppRoutes.test,

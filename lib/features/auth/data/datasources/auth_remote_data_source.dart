@@ -16,10 +16,29 @@ abstract class AuthRemoteDataSource {
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final Dio dio;
 
+  // Demo/Test account credentials for development
+  static const String _demoEmail = 'test@voicely.com';
+  static const String _demoPassword = 'password123';
+  static const bool _enableDemoAccount = true; // Set to false in production
+
   AuthRemoteDataSourceImpl({required this.dio});
 
   @override
   Future<Map<String, String>> login(String email, String password) async {
+    // Check for demo account login
+    if (_enableDemoAccount &&
+        email == _demoEmail &&
+        password == _demoPassword) {
+      log('Demo account login successful');
+      return {
+        'access_token':
+            'demo_access_token_${DateTime.now().millisecondsSinceEpoch}',
+        'refresh_token':
+            'demo_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
+        'token_type': 'Bearer',
+      };
+    }
+
     try {
       log('Attempting login with email: $email'); // Log request details
       final response = await dio.post(
@@ -120,6 +139,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getCurrentUser(String accessToken) async {
+    // Check for demo account token
+    if (_enableDemoAccount && accessToken.startsWith('demo_access_token_')) {
+      log('Returning demo user data');
+      return {
+        'id': 'demo_user_001',
+        'name': 'Demo User',
+        'email': _demoEmail,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+    }
+
     try {
       final response = await dio.get(
         '/auth/me',

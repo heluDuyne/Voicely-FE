@@ -98,7 +98,7 @@ class _SignupPageState extends State<SignupPage> {
               context,
             ).showSnackBar(SnackBar(content: Text(state.message)));
           } else if (state is AuthAuthenticated) {
-            context.go(AppRoutes.landing);
+            context.go(AppRoutes.recording);
           }
         },
         child: SafeArea(

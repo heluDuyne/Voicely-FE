@@ -60,6 +60,10 @@ dependencies:
   #audio
   audioplayers: ^6.5.1
 
+  # Recording
+  record: ^6.0.0
+  path_provider: ^2.1.1
+
   # File picking
   file_picker: ^10.3.3
 

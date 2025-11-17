@@ -14,6 +14,15 @@ import '../features/auth/domain/usecases/login_user.dart';
 import '../features/auth/domain/usecases/signup_user.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
 
+// Features - Recording
+import '../features/recording/data/datasources/recording_local_data_source.dart';
+import '../features/recording/data/repositories/recording_repository_impl.dart';
+import '../features/recording/domain/repositories/recording_repository.dart';
+import '../features/recording/domain/usecases/start_recording.dart';
+import '../features/recording/domain/usecases/stop_recording.dart';
+import '../features/recording/domain/usecases/import_audio.dart';
+import '../features/recording/presentation/bloc/recording_bloc.dart';
+
 // Features - Transcription
 import '../features/transcription/data/datasources/transcription_remote_data_source.dart';
 import '../features/transcription/data/repositories/transcription_repository_impl.dart';
@@ -45,6 +54,32 @@ Future<void> init() async {
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(dio: sl()),
+  );
+
+  //! Features - Recording
+  // Bloc
+  sl.registerFactory(
+    () => RecordingBloc(
+      startRecording: sl(),
+      stopRecording: sl(),
+      importAudio: sl(),
+      repository: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => StartRecording(sl()));
+  sl.registerLazySingleton(() => StopRecording(sl()));
+  sl.registerLazySingleton(() => ImportAudio(sl()));
+
+  // Repository
+  sl.registerLazySingleton<RecordingRepository>(
+    () => RecordingRepositoryImpl(localDataSource: sl()),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<RecordingLocalDataSource>(
+    () => RecordingLocalDataSourceImpl(),
   );
 
   //! Features - Transcription

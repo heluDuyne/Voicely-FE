@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
               context,
             ).showSnackBar(SnackBar(content: Text(state.message)));
           } else if (state is AuthAuthenticated) {
-            context.go(AppRoutes.test);
+            context.go(AppRoutes.recording);
           }
         },
         child: SafeArea(

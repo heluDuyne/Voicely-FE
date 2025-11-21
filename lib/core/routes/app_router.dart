@@ -5,6 +5,8 @@ import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_screen.dart';
 import '../../features/landing/presentation/pages/landing_page.dart';
 import '../../features/recording/presentation/pages/recording_page.dart';
+import '../../features/transcription/presentation/pages/transcript_list_screen.dart';
+import '../../features/transcription/presentation/pages/add_folder_screen.dart';
 import '../../features/test/presentation/pages/test_screen.dart';
 
 class AppRoutes {
@@ -13,6 +15,8 @@ class AppRoutes {
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
   static const String recording = '/recording';
+  static const String transcriptList = '/transcript-list';
+  static const String addFolder = '/add-folder';
   static const String test = '/test';
   static const String transcriptionResult = '/transcription-result';
 }
@@ -44,6 +48,16 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.recording,
       name: 'recording',
       builder: (context, state) => const RecordingPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.transcriptList,
+      name: 'transcriptList',
+      builder: (context, state) => const TranscriptListScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.addFolder,
+      name: 'addFolder',
+      builder: (context, state) => const AddFolderScreen(),
     ),
     GoRoute(
       path: AppRoutes.test,

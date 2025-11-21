@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/routes/app_router.dart';
 import '../bloc/recording_bloc.dart';
 import '../bloc/recording_event.dart';
 import '../bloc/recording_state.dart';
@@ -56,10 +58,7 @@ class _RecordingPageContent extends StatelessWidget {
   }
 
   void _onHistoryPressed(BuildContext context) {
-    // TODO: Navigate to recording history
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Recording history coming soon')),
-    );
+    context.push(AppRoutes.transcriptList);
   }
 
   String _formatDuration(Duration duration) {

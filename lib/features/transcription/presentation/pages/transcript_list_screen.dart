@@ -60,9 +60,9 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
 
   void _onFolderTapped(Map<String, dynamic> folder) {
     // TODO: Navigate to folder contents
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Open folder: ${folder['name']}')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Open folder: ${folder['name']}')));
   }
 
   void _onTranscriptTapped(Map<String, dynamic> transcript) {
@@ -74,9 +74,9 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
 
   void _onLogoutPressed() {
     // TODO: Implement logout
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logout pressed')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Logout pressed')));
   }
 
   @override
@@ -196,7 +196,10 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
             GestureDetector(
               onTap: _onNewFolderPressed,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF282E39),
                   borderRadius: BorderRadius.circular(8),
@@ -253,9 +256,7 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
   }
 
   Widget _buildAddFolderCard() {
-    return AddFolderCard(
-      onTap: _onAddFolderPressed,
-    );
+    return AddFolderCard(onTap: _onAddFolderPressed);
   }
 
   Widget _buildRecentTranscriptsSection() {
@@ -293,56 +294,57 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
     );
   }
 
+  void _onProfilePressed() {
+    context.push(AppRoutes.profile);
+  }
+
   Widget _buildUserProfileBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF101822),
-        border: Border(
-          top: BorderSide(color: Colors.grey[800]!, width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5)),
       ),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFE8D5B7),
-            ),
-            child: ClipOval(
-              child: Icon(
-                Icons.person,
-                color: Colors.brown[400],
-                size: 32,
+          // Avatar - tappable to go to profile
+          GestureDetector(
+            onTap: _onProfilePressed,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFE8D5B7),
+              ),
+              child: ClipOval(
+                child: Icon(Icons.person, color: Colors.brown[400], size: 32),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          // User info
+          // User info - also tappable to go to profile
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'John Doe',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+            child: GestureDetector(
+              onTap: _onProfilePressed,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'John Doe',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Text(
-                  'Premium',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 13,
+                  Text(
+                    'Premium',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           // Logout button
@@ -369,4 +371,3 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
     );
   }
 }
-

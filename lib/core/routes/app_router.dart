@@ -7,6 +7,8 @@ import '../../features/landing/presentation/pages/landing_page.dart';
 import '../../features/recording/presentation/pages/recording_page.dart';
 import '../../features/transcription/presentation/pages/transcript_list_screen.dart';
 import '../../features/transcription/presentation/pages/add_folder_screen.dart';
+import '../../features/profile/presentation/pages/profile_screen.dart';
+import '../../features/profile/presentation/pages/edit_profile_screen.dart';
 import '../../features/test/presentation/pages/test_screen.dart';
 
 class AppRoutes {
@@ -17,6 +19,8 @@ class AppRoutes {
   static const String recording = '/recording';
   static const String transcriptList = '/transcript-list';
   static const String addFolder = '/add-folder';
+  static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
   static const String test = '/test';
   static const String transcriptionResult = '/transcription-result';
 }
@@ -58,6 +62,16 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.addFolder,
       name: 'addFolder',
       builder: (context, state) => const AddFolderScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.profile,
+      name: 'profile',
+      builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.editProfile,
+      name: 'editProfile',
+      builder: (context, state) => const EditProfileScreen(),
     ),
     GoRoute(
       path: AppRoutes.test,

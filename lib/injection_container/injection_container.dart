@@ -31,6 +31,17 @@ import '../features/transcription/domain/usecases/upload_audio.dart';
 import '../features/transcription/domain/usecases/transcribe_audio.dart';
 import '../features/transcription/presentation/bloc/transcription_bloc.dart';
 
+// Features - Summary
+import '../features/summary/data/datasources/summary_remote_data_source.dart';
+import '../features/summary/data/datasources/summary_local_data_source.dart';
+import '../features/summary/data/repositories/summary_repository_impl.dart';
+import '../features/summary/domain/repositories/summary_repository.dart';
+import '../features/summary/domain/usecases/get_summary.dart';
+import '../features/summary/domain/usecases/save_summary.dart';
+import '../features/summary/domain/usecases/resummarize.dart';
+import '../features/summary/domain/usecases/update_action_item.dart';
+import '../features/summary/presentation/bloc/summary_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -104,6 +115,41 @@ Future<void> init() async {
   // Data sources
   sl.registerLazySingleton<TranscriptionRemoteDataSource>(
     () => TranscriptionRemoteDataSourceImpl(dio: sl()),
+  );
+
+  //! Features - Summary
+  // Bloc
+  sl.registerFactory(
+    () => SummaryBloc(
+      getSummary: sl(),
+      saveSummary: sl(),
+      resummarize: sl(),
+      updateActionItem: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => GetSummary(sl()));
+  sl.registerLazySingleton(() => SaveSummary(sl()));
+  sl.registerLazySingleton(() => Resummarize(sl()));
+  sl.registerLazySingleton(() => UpdateActionItem(sl()));
+
+  // Repository
+  sl.registerLazySingleton<SummaryRepository>(
+    () => SummaryRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<SummaryRemoteDataSource>(
+    () => SummaryRemoteDataSourceImpl(dio: sl()),
+  );
+  sl.registerLazySingleton<SummaryLocalDataSource>(
+    () => SummaryLocalDataSourceImpl(sharedPreferences: sl()),
   );
 
   //! Core

@@ -41,3 +41,7 @@ class Recording extends Equatable {
   List<Object?> get props => [id, filePath, fileName, duration, createdAt, status];
 }
 
+
+
+
+

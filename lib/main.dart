@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/recording/presentation/bloc/recording_bloc.dart';
 import 'features/transcription/presentation/bloc/transcription_bloc.dart';
+import 'features/summary/presentation/bloc/summary_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<TranscriptionBloc>(
           create: (_) => di.sl<TranscriptionBloc>(),
         ),
+        BlocProvider<SummaryBloc>(create: (_) => di.sl<SummaryBloc>()),
       ],
       child: MaterialApp.router(
         title: 'Voicely',

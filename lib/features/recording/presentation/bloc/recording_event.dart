@@ -36,3 +36,7 @@ class DurationUpdated extends RecordingEvent {
   List<Object?> get props => [duration];
 }
 
+
+
+
+

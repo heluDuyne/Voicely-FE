@@ -10,6 +10,8 @@ import '../../features/transcription/presentation/pages/add_folder_screen.dart';
 import '../../features/profile/presentation/pages/profile_screen.dart';
 import '../../features/profile/presentation/pages/edit_profile_screen.dart';
 import '../../features/test/presentation/pages/test_screen.dart';
+import '../../features/transcription/presentation/pages/transcription_page.dart';
+import '../../features/summary/presentation/pages/summary_page.dart';
 
 class AppRoutes {
   static const String landing = '/';
@@ -23,6 +25,8 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String test = '/test';
   static const String transcriptionResult = '/transcription-result';
+  static const String transcription = '/transcription';
+  static const String summary = '/summary';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -77,6 +81,26 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.test,
       name: 'test',
       builder: (context, state) => const TestPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.transcription,
+      name: 'transcription',
+      builder: (context, state) {
+        final meetingTitle = state.uri.queryParameters['title'];
+        return TranscriptionPage(meetingTitle: meetingTitle);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.summary,
+      name: 'summary',
+      builder: (context, state) {
+        final meetingTitle = state.uri.queryParameters['title'];
+        final transcriptionId = state.uri.queryParameters['transcriptionId'];
+        return SummaryPage(
+          meetingTitle: meetingTitle,
+          transcriptionId: transcriptionId,
+        );
+      },
     ),
   ],
   errorBuilder:

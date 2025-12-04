@@ -23,7 +23,10 @@ class RecordingPage extends StatelessWidget {
               content: Text('Recording saved: ${state.recording.fileName}'),
             ),
           );
-          // TODO: Navigate to transcription or next step
+          // Navigate to transcription page
+          context.push(
+            '${AppRoutes.transcription}?title=${Uri.encodeComponent(state.recording.fileName ?? 'Meeting Recording')}',
+          );
         } else if (state is AudioImported) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -32,7 +35,11 @@ class RecordingPage extends StatelessWidget {
               ),
             ),
           );
-          // TODO: Navigate to transcription or next step
+          // Navigate to transcription page
+          final fileName = state.audioFile.path.split('/').last;
+          context.push(
+            '${AppRoutes.transcription}?title=${Uri.encodeComponent(fileName)}',
+          );
         }
       },
       child: const _RecordingPageContent(),

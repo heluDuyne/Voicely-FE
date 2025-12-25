@@ -7,6 +7,7 @@ import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_screen.dart';
 import '../../features/audio_manager/presentation/bloc/audio_manager_bloc.dart';
 import '../../features/audio_manager/presentation/bloc/audio_manager_event.dart';
+import '../../features/audio_manager/presentation/bloc/task_monitor_bloc.dart';
 import '../../features/audio_manager/presentation/pages/audio_manager_page.dart';
 import '../../features/landing/presentation/pages/landing_page.dart';
 import '../../features/recording/presentation/pages/recording_page.dart';
@@ -91,13 +92,21 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.audioManager,
       name: 'audioManager',
-      builder: (context, state) => BlocProvider(
-        create: (context) => sl<AudioManagerBloc>()
-          ..add(const LoadUploadedAudios())
-          ..add(const LoadServerTasks())
-          ..add(const LoadPendingTasks()),
-        child: const AudioManagerPage(),
-      ),
+      builder: (context, state) {
+        final tab = state.uri.queryParameters['tab'];
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create:
+                  (context) => sl<AudioManagerBloc>()
+                    ..add(const LoadUploadedAudios())
+                    ..add(const LoadPendingTasks()),
+            ),
+            BlocProvider(create: (context) => sl<TaskMonitorBloc>()),
+          ],
+          child: AudioManagerPage(initialTab: tab),
+        );
+      },
     ),
     GoRoute(
       path: AppRoutes.transcription,

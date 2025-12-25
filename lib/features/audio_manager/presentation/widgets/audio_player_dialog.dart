@@ -29,6 +29,8 @@ class _AudioPlayerDialogState extends State<AudioPlayerDialog> {
   }
 
   void _initPlayer() async {
+    print('DEBUG: AudioPlayer - Setting source to: ${widget.audioUrl}');
+    
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (!mounted) {
         return;
@@ -56,7 +58,16 @@ class _AudioPlayerDialogState extends State<AudioPlayerDialog> {
       });
     });
 
-    await _audioPlayer.setSource(UrlSource(widget.audioUrl));
+    try {
+      await _audioPlayer.setSource(UrlSource(widget.audioUrl));
+    } catch (e) {
+      print('ERROR: AudioPlayer - Failed to set source: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load audio: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -66,10 +77,19 @@ class _AudioPlayerDialogState extends State<AudioPlayerDialog> {
   }
 
   Future<void> _playPause() async {
-    if (_isPlaying) {
-      await _audioPlayer.pause();
-    } else {
-      await _audioPlayer.resume();
+    try {
+      if (_isPlaying) {
+        await _audioPlayer.pause();
+      } else {
+        await _audioPlayer.resume();
+      }
+    } catch (e) {
+      print('ERROR: AudioPlayer - Play/Pause error: $e');
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Playback error: $e')),
+        );
+      }
     }
   }
 

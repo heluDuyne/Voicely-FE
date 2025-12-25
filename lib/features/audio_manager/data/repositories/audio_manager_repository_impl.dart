@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:dartz/dartz.dart';
+import 'package:dartz/dartz.dart' hide Task;
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
@@ -9,6 +9,8 @@ import '../../domain/entities/audio_filter.dart';
 import '../../domain/entities/audio_upload_result.dart';
 import '../../domain/entities/pending_task_bucket.dart';
 import '../../domain/entities/server_task_bucket.dart';
+import '../../domain/entities/task.dart';
+import '../../domain/entities/task_search_criteria.dart';
 import '../../domain/repositories/audio_manager_repository.dart';
 import '../datasources/audio_manager_local_data_source.dart';
 import '../datasources/audio_manager_remote_data_source.dart';
@@ -139,5 +141,28 @@ class AudioManagerRepositoryImpl implements AudioManagerRepository {
     }
 
     return const Left(NetworkFailure('No internet connection'));
+  }
+
+  @override
+  Future<Either<Failure, List<Task>>> searchTasks(
+    TaskSearchCriteria criteria,
+  ) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(UnauthorizedFailure('Please login to view tasks'));
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final tasks = await remoteDataSource.searchTasks(criteria);
+      return Right(tasks);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
   }
 }

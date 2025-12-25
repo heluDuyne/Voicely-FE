@@ -1,14 +1,15 @@
+import 'dart:io';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routes/app_router.dart';
 import '../../../../injection_container/injection_container.dart';
 import '../../../audio_manager/presentation/bloc/audio_manager_bloc.dart';
 import '../../../audio_manager/presentation/bloc/audio_manager_event.dart';
+import '../../../audio_manager/presentation/bloc/task_monitor_bloc.dart';
 import '../../../audio_manager/presentation/pages/audio_manager_page.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../transcription/presentation/pages/transcript_list_screen.dart';
+import '../../domain/entities/recording.dart';
 import '../bloc/recording_bloc.dart';
 import '../bloc/recording_event.dart';
 import '../bloc/recording_state.dart';
@@ -23,23 +24,17 @@ class RecordingPage extends StatefulWidget {
 class _RecordingPageState extends State<RecordingPage> {
   final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
   int _page = 2;
-  late final List<Widget> _pages;
+  bool _hasShownLimitNotice = false;
+  File? _pendingUploadFile;
+  String? _audioManagerTab;
 
-  @override
-  void initState() {
-    super.initState();
-    _pages = const [
-      TranscriptListScreen(),
-      AudioManagerPage(),
-      _RecordingView(),
-      _PlaceholderView(message: 'Uploading Screen Placeholder'),
-      ProfileScreen(),
-    ];
-  }
-
-  void _onImportPressed(BuildContext context) {
-    context.read<RecordingBloc>().add(const ImportAudioRequested());
-  }
+  List<Widget> get _pages => [
+        const TranscriptListScreen(),
+        AudioManagerPage(initialTab: _audioManagerTab),
+        const _RecordingView(),
+        const _PlaceholderView(message: 'Uploading Screen Placeholder'),
+        const ProfileScreen(),
+      ];
 
   void _onRecordPressed(BuildContext context, RecordingState state) {
     if (state is RecordingInProgress) {
@@ -58,6 +53,10 @@ class _RecordingPageState extends State<RecordingPage> {
 
     setState(() {
       _page = index;
+      // Reset audio manager tab when navigating away or manually tapping
+      if (index != 1) {
+        _audioManagerTab = null;
+      }
     });
   }
 
@@ -69,24 +68,74 @@ class _RecordingPageState extends State<RecordingPage> {
           create:
               (context) => sl<AudioManagerBloc>()
                 ..add(const LoadUploadedAudios())
-                ..add(const LoadServerTasks())
                 ..add(const LoadPendingTasks()),
+        ),
+        BlocProvider<TaskMonitorBloc>(
+          create: (context) => sl<TaskMonitorBloc>(),
         ),
       ],
       child: BlocListener<RecordingBloc, RecordingState>(
         listener: (context, state) {
-          if (state is RecordingError) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
-          } else if (state is RecordingCompleted) {
+          if (state is RecordingInProgress &&
+              state.duration == Duration.zero &&
+              !_hasShownLimitNotice) {
+            _hasShownLimitNotice = true;
+            _pendingUploadFile = null;
+            _showRecordingLimitNotification(context);
+          } else if (state is RecordingCompletedMaxDuration) {
+            _hasShownLimitNotice = false;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Recording saved: ${state.recording.fileName}'),
+                content: Text(state.message),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 5),
               ),
             );
-            context.push(
-              '${AppRoutes.transcription}?title=${Uri.encodeComponent(state.recording.fileName ?? 'Meeting Recording')}',
+            _uploadRecording(context, state.recording);
+          } else if (state is RecordingCompleted) {
+            _hasShownLimitNotice = false;
+            _uploadRecording(context, state.recording);
+          } else if (state is RecordingUploadSuccess) {
+            _pendingUploadFile = null;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+              ),
+            );
+            
+            // Switch to Audio Manager -> Tasks tab without pushing new route
+            setState(() {
+              _audioManagerTab = 'tasks';
+              _page = 1;
+              
+              // Also update the bottom nav bar UI state
+              final navState = _bottomNavigationKey.currentState;
+              if (navState != null) {
+                navState.setPage(1);
+              }
+            });
+          } else if (state is RecordingError) {
+            final action =
+                _pendingUploadFile == null
+                    ? null
+                    : SnackBarAction(
+                      label: 'Retry',
+                      onPressed: () {
+                        final file = _pendingUploadFile;
+                        if (file != null) {
+                          context.read<RecordingBloc>().add(
+                            UploadRecordingRequested(file),
+                          );
+                        }
+                      },
+                    );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                action: action,
+                backgroundColor: Colors.red,
+              ),
             );
           } else if (state is AudioImported) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -96,11 +145,9 @@ class _RecordingPageState extends State<RecordingPage> {
                 ),
               ),
             );
-            final fileName = state.audioFile.path.split('/').last;
             // Note: In real app, we might want to let AudioManager handle this
             // But preserving existing behavior for now if needed,
             // or we could dispatch to AudioManagerBloc here.
-            // context.push('${AppRoutes.transcription}?title=${Uri.encodeComponent(fileName)}');
           }
         },
         child: BlocBuilder<RecordingBloc, RecordingState>(
@@ -182,6 +229,36 @@ class _RecordingPageState extends State<RecordingPage> {
         ),
       ),
     );
+  }
+
+  void _showRecordingLimitNotification(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Recording limit: 2 hours maximum',
+          style: TextStyle(fontSize: 16),
+        ),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _uploadRecording(BuildContext context, Recording recording) {
+    final path = recording.filePath;
+    if (path == null || path.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Recording file path is missing'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final file = File(path);
+    _pendingUploadFile = file;
+    context.read<RecordingBloc>().add(UploadRecordingRequested(file));
   }
 }
 

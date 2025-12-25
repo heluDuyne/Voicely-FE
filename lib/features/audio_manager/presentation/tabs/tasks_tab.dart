@@ -1,154 +1,138 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/entities/server_task.dart';
-import '../bloc/audio_manager_bloc.dart';
-import '../bloc/audio_manager_event.dart';
-import '../bloc/audio_manager_state.dart';
+import '../bloc/task_monitor_bloc.dart';
+import '../bloc/task_monitor_state.dart';
 import '../widgets/collapsible_section.dart';
-import '../widgets/common_task_item.dart';
+import '../widgets/loading_task_item.dart';
 
 class TasksTab extends StatelessWidget {
   const TasksTab({super.key});
 
+  String _formatStatus(String status) {
+    final trimmed = status.trim();
+    if (trimmed.isEmpty) {
+      return 'In progress';
+    }
+    final normalized =
+        trimmed.replaceAll(RegExp(r'[_-]+'), ' ').toLowerCase();
+    final words = normalized
+        .split(' ')
+        .where((word) => word.isNotEmpty)
+        .toList();
+    if (words.isEmpty) {
+      return 'In progress';
+    }
+    return words
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AudioManagerBloc, AudioManagerState>(
+    return BlocBuilder<TaskMonitorBloc, TaskMonitorState>(
       builder: (context, state) {
-        final totalTasks =
-            state.uploadingTasks.length +
-            state.transcribingTasks.length +
-            state.summarizingTasks.length;
+        if (state is TasksLoaded) {
+          final totalTasks =
+              state.uploadTasks.length +
+              state.transcribeTasks.length +
+              state.summarizeTasks.length;
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            context.read<AudioManagerBloc>().add(const LoadServerTasks());
-          },
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              if (state.isLoadingTasks && totalTasks == 0)
-                const Padding(
-                  padding: EdgeInsets.only(top: 32),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF3B82F6),
-                      ),
-                    ),
-                  ),
-                )
-              else if (totalTasks == 0)
-                const Padding(
-                  padding: EdgeInsets.only(top: 32),
-                  child: Center(
-                    child: Text(
-                      'No active tasks right now',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                )
-              else ...[
+          if (totalTasks == 0) {
+            return const Center(
+              child: Text(
+                'No active tasks right now',
+                style: TextStyle(color: Colors.white70),
+              ),
+            );
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
                 CollapsibleSection(
                   title: 'Uploading',
-                  count: state.uploadingTasks.length,
+                  count: state.uploadTasks.length,
                   children:
-                      state.uploadingTasks
+                      state.uploadTasks
                           .map(
-                            (task) => _buildTaskItem(
-                              context,
-                              task,
+                            (task) => LoadingTaskItem(
                               icon: Icons.upload_file,
                               iconColor: Colors.orange,
-                              description: _buildStatus(task),
+                              title: task.filename,
+                              description:
+                                  'Status: ${_formatStatus(task.status)}',
+                              onTap: () => _showTaskNotification(
+                                context,
+                                'Uploading',
+                              ),
                             ),
                           )
                           .toList(),
                 ),
+                const SizedBox(height: 16),
                 CollapsibleSection(
                   title: 'Transcribing',
-                  count: state.transcribingTasks.length,
+                  count: state.transcribeTasks.length,
                   children:
-                      state.transcribingTasks
+                      state.transcribeTasks
                           .map(
-                            (task) => _buildTaskItem(
-                              context,
-                              task,
+                            (task) => LoadingTaskItem(
                               icon: Icons.description,
                               iconColor: Colors.blue,
-                              description: _buildStatus(task),
+                              title: task.filename,
+                              description:
+                                  'Status: ${_formatStatus(task.status)}',
+                              onTap: () => _showTaskNotification(
+                                context,
+                                'Transcribing',
+                              ),
                             ),
                           )
                           .toList(),
                 ),
+                const SizedBox(height: 16),
                 CollapsibleSection(
                   title: 'Summarizing',
-                  count: state.summarizingTasks.length,
+                  count: state.summarizeTasks.length,
                   children:
-                      state.summarizingTasks
+                      state.summarizeTasks
                           .map(
-                            (task) => _buildTaskItem(
-                              context,
-                              task,
-                              icon: Icons.notes,
-                              iconColor: Colors.purple,
-                              description: _buildStatus(task),
+                            (task) => LoadingTaskItem(
+                              icon: Icons.summarize,
+                              iconColor: Colors.green,
+                              title: task.filename,
+                              description:
+                                  'Status: ${_formatStatus(task.status)}',
+                              onTap: () => _showTaskNotification(
+                                context,
+                                'Summarizing',
+                              ),
                             ),
                           )
                           .toList(),
                 ),
               ],
-              const SizedBox(height: 16),
-            ],
+            ),
+          );
+        }
+
+        return const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
           ),
         );
       },
     );
   }
 
-  Widget _buildTaskItem(
-    BuildContext context,
-    ServerTask task, {
-    required IconData icon,
-    required Color iconColor,
-    required String description,
-  }) {
-    return CommonTaskItem(
-      icon: icon,
-      iconColor: iconColor,
-      title: task.filename,
-      description: description,
-      isLoading: true,
-      showChevron: false,
-      onTap: () => _showTaskNotification(context, task.type),
-    );
-  }
-
-  void _showTaskNotification(BuildContext context, ServerTaskType type) {
-    final label = _taskLabel(type);
+  void _showTaskNotification(BuildContext context, String taskType) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label in progress...'),
+        content: Text('$taskType in progress...'),
         duration: const Duration(seconds: 2),
         backgroundColor: const Color(0xFF3B82F6),
       ),
     );
-  }
-
-  String _taskLabel(ServerTaskType type) {
-    switch (type) {
-      case ServerTaskType.uploading:
-        return 'Uploading';
-      case ServerTaskType.transcribing:
-        return 'Transcribing';
-      case ServerTaskType.summarizing:
-        return 'Summarizing';
-    }
-  }
-
-  String _buildStatus(ServerTask task) {
-    if (task.progress != null) {
-      return '${task.status} ${task.progress}%';
-    }
-    return '${task.status}...';
   }
 }

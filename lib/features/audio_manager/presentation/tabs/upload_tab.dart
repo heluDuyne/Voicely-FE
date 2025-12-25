@@ -43,9 +43,11 @@ class _UploadTabState extends State<UploadTab> {
   }
 
   void _onScroll() {
-    final threshold = 200.0;
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - threshold) {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    if (_scrollController.offset >= maxScroll * 0.8) {
       final bloc = context.read<AudioManagerBloc>();
       final state = bloc.state;
       if (!state.isLoadingMore &&
@@ -263,6 +265,12 @@ class _UploadTabState extends State<UploadTab> {
 
   String _buildAudioDescription(AudioFile audio) {
     final parts = <String>[];
+    if (audio.duration != null) {
+      parts.add('Duration ${_formatDuration(audio.duration!)}');
+    }
+    if (audio.status != null && audio.status!.isNotEmpty) {
+      parts.add('Status: ${_formatStatus(audio.status!)}');
+    }
     if (audio.uploadDate != null) {
       parts.add('Uploaded ${_formatDate(audio.uploadDate!)}');
     }
@@ -284,5 +292,25 @@ class _UploadTabState extends State<UploadTab> {
   String _formatBytes(int bytes) {
     final mb = bytes / (1024 * 1024);
     return '${mb.toStringAsFixed(1)} MB';
+  }
+
+  String _formatDuration(double seconds) {
+    final duration = Duration(seconds: seconds.round());
+    final minutes = duration.inMinutes;
+    final remainingSeconds = duration.inSeconds.remainder(60);
+    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  String _formatStatus(String status) {
+    final normalized = status.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return 'Unknown';
+    }
+    final words =
+        normalized.replaceAll(RegExp(r'[_-]+'), ' ').split(' ');
+    return words
+        .where((word) => word.isNotEmpty)
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 }

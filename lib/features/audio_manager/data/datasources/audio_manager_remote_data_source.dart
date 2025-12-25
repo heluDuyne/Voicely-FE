@@ -7,15 +7,18 @@ import '../models/audio_file_page_model.dart';
 import '../models/audio_upload_result_model.dart';
 import '../models/pending_task_model.dart';
 import '../models/server_task_model.dart';
+import '../models/task_model.dart';
 import '../../domain/entities/server_task.dart';
 import '../../domain/entities/pending_task_bucket.dart';
 import '../../domain/entities/server_task_bucket.dart';
+import '../../domain/entities/task_search_criteria.dart';
 
 abstract class AudioManagerRemoteDataSource {
   Future<AudioFilePageModel> getAudioFiles(AudioFilterModel filter);
   Future<AudioUploadResultModel> uploadAudioFile(File audioFile);
   Future<ServerTaskBucket> getServerTasks();
   Future<PendingTaskBucket> getPendingTasks();
+  Future<List<TaskModel>> searchTasks(TaskSearchCriteria criteria);
 }
 
 class AudioManagerRemoteDataSourceImpl implements AudioManagerRemoteDataSource {
@@ -26,18 +29,33 @@ class AudioManagerRemoteDataSourceImpl implements AudioManagerRemoteDataSource {
   @override
   Future<AudioFilePageModel> getAudioFiles(AudioFilterModel filter) async {
     try {
-      final response = await dio.get(
-        AppConstants.audioFilesEndpoint,
-        queryParameters: filter.toQueryParams(),
+      final response = await dio.post(
+        AppConstants.audioSearchEndpoint,
+        data: filter.toSearchBody(),
       );
 
       final data = _extractData(
         response,
-        fallbackMessage: 'Failed to load audio files',
+        fallbackMessage: 'Failed to search audio files',
       );
-      return AudioFilePageModel.fromJson(data);
+
+      if (data is List) {
+        return AudioFilePageModel.fromJson({
+          'items': data,
+          'total': data.length,
+          'page': 1,
+          'limit': data.length,
+        });
+      } else if (data is Map<String, dynamic>) {
+        return AudioFilePageModel.fromJson(data);
+      }
+      
+      throw const ServerException('Invalid response data structure');
     } on DioException catch (e) {
-      throw _handleDioException(e, fallbackMessage: 'Failed to load audio files');
+      throw _handleDioException(
+        e,
+        fallbackMessage: 'Failed to search audio files',
+      );
     }
   }
 
@@ -52,7 +70,7 @@ class AudioManagerRemoteDataSourceImpl implements AudioManagerRemoteDataSource {
       });
 
       final response = await dio.post(
-        AppConstants.audioUploadEndpoint,
+        AppConstants.audioUploadAsyncEndpoint,
         data: formData,
         options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
@@ -151,7 +169,41 @@ class AudioManagerRemoteDataSourceImpl implements AudioManagerRemoteDataSource {
     }
   }
 
-  Map<String, dynamic> _extractData(
+  @override
+  Future<List<TaskModel>> searchTasks(TaskSearchCriteria criteria) async {
+    try {
+      final response = await dio.post(
+        AppConstants.searchTasksEndpoint,
+        data: criteria.toJson(),
+      );
+
+      print('DEBUG: Response from ${AppConstants.searchTasksEndpoint} (searchTasks):');
+      print(response.data);
+
+      final data = _extractData(
+        response,
+        fallbackMessage: 'Failed to search tasks',
+      );
+      final taskItems = data['data'];
+      if (taskItems is! List) {
+        throw const ServerException('Invalid response data');
+      }
+
+      return taskItems
+          .map(
+            (item) =>
+                TaskModel.fromJson(item as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioException(
+        e,
+        fallbackMessage: 'Failed to search tasks',
+      );
+    }
+  }
+
+  dynamic _extractData(
     Response<dynamic> response, {
     required String fallbackMessage,
   }) {
@@ -163,11 +215,7 @@ class AudioManagerRemoteDataSourceImpl implements AudioManagerRemoteDataSource {
     final success = payload['success'] == true;
     final statusCode = response.statusCode ?? 500;
     if (statusCode >= 200 && statusCode < 300 && success) {
-      final data = payload['data'];
-      if (data is Map<String, dynamic>) {
-        return data;
-      }
-      throw ServerException('Invalid response data');
+      return payload['data'];
     }
 
     final message = payload['message']?.toString() ?? fallbackMessage;

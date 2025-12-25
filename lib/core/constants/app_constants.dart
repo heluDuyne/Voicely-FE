@@ -9,8 +9,11 @@ class AppConstants {
   static const String signupEndpoint = '/auth/register';
   static const String refreshTokenEndpoint = '/auth/refresh';
   static const String audioFilesEndpoint = '/audio/files';
+  static const String audioSearchEndpoint = '/audio/search';
   static const String audioUploadEndpoint = '/audio/upload';
+  static const String audioUploadAsyncEndpoint = '/audio/upload-async';
   static const String activeTasksEndpoint = '/tasks/active';
+  static const String searchTasksEndpoint = '/tasks/search';
   static const String pendingTasksEndpoint = '/tasks/pending';
 
   // Storage keys
@@ -22,6 +25,14 @@ class AppConstants {
   // Timeouts
   static const int connectionTimeout = 30000; // 30 seconds
   static const int receiveTimeout = 30000; // 30 seconds
+
+  // Recording limits
+  static const Duration maxRecordingDuration = Duration(hours: 2);
+  static const int maxRecordingSeconds = 7200;
+
+  // Task polling
+  static const Duration taskPollingInterval = Duration(seconds: 3);
+  static const int maxPollingRetries = 3;
 
   // App Info
   static const String appName = 'Voicely';

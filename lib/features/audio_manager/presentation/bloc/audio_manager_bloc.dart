@@ -80,7 +80,8 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
           toDate: toDate,
           page: page.page,
           limit: page.limit,
-          hasMoreAudios: page.items.length < page.total,
+          hasMoreAudios:
+              page.hasNextPage ?? page.items.length < page.total,
         ),
       ),
     );
@@ -120,7 +121,8 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
           searchQuery: event.query,
           page: page.page,
           limit: page.limit,
-          hasMoreAudios: page.items.length < page.total,
+          hasMoreAudios:
+              page.hasNextPage ?? page.items.length < page.total,
         ),
       ),
     );
@@ -162,7 +164,8 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
           toDate: event.toDate,
           page: page.page,
           limit: page.limit,
-          hasMoreAudios: page.items.length < page.total,
+          hasMoreAudios:
+              page.hasNextPage ?? page.items.length < page.total,
         ),
       ),
     );
@@ -198,7 +201,8 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
           state.copyWith(
             isUploading: false,
             uploadProgress: 1,
-            successMessage: 'Audio uploaded: ${upload.filename}',
+            successMessage:
+                'Upload started for ${upload.filename}. Check Tasks tab.',
           ),
         );
         add(
@@ -208,7 +212,6 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
             toDate: state.toDate,
           ),
         );
-        add(const LoadServerTasks());
       },
     );
   }
@@ -275,7 +278,6 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
         toDate: state.toDate,
       ),
     );
-    add(const LoadServerTasks());
     add(const LoadPendingTasks());
   }
 
@@ -314,7 +316,9 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
           totalCount: page.total,
           page: page.page,
           limit: page.limit,
-          hasMoreAudios: state.audios.length + page.items.length < page.total,
+          hasMoreAudios:
+              page.hasNextPage ??
+              state.audios.length + page.items.length < page.total,
         ),
       ),
     );

@@ -40,7 +40,7 @@ class SearchAudiosParams extends Equatable {
     this.fromDate,
     this.toDate,
     this.page = 1,
-    this.limit = 20,
+    this.limit = 10,
   });
 
   @override

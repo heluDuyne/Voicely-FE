@@ -28,16 +28,20 @@ import '../features/audio_manager/domain/usecases/get_pending_tasks.dart';
 import '../features/audio_manager/domain/usecases/get_server_tasks.dart';
 import '../features/audio_manager/domain/usecases/get_uploaded_audios.dart';
 import '../features/audio_manager/domain/usecases/search_audios.dart';
+import '../features/audio_manager/domain/usecases/search_tasks.dart';
 import '../features/audio_manager/domain/usecases/upload_audio_file.dart';
 import '../features/audio_manager/presentation/bloc/audio_manager_bloc.dart';
+import '../features/audio_manager/presentation/bloc/task_monitor_bloc.dart';
 
 // Features - Recording
 import '../features/recording/data/datasources/recording_local_data_source.dart';
+import '../features/recording/data/datasources/recording_remote_data_source.dart';
 import '../features/recording/data/repositories/recording_repository_impl.dart';
 import '../features/recording/domain/repositories/recording_repository.dart';
 import '../features/recording/domain/usecases/start_recording.dart';
 import '../features/recording/domain/usecases/stop_recording.dart';
 import '../features/recording/domain/usecases/import_audio.dart';
+import '../features/recording/domain/usecases/upload_recording_async.dart';
 import '../features/recording/presentation/bloc/recording_bloc.dart';
 
 // Features - Transcription
@@ -107,6 +111,7 @@ Future<void> init() async {
       filterAudios: sl(),
     ),
   );
+  sl.registerFactory(() => TaskMonitorBloc(searchTasks: sl()));
 
   // Use cases
   sl.registerLazySingleton(() => GetUploadedAudios(sl()));
@@ -114,6 +119,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetServerTasks(sl()));
   sl.registerLazySingleton(() => GetPendingTasks(sl()));
   sl.registerLazySingleton(() => SearchAudios(sl()));
+  sl.registerLazySingleton(() => SearchTasks(sl()));
   sl.registerLazySingleton(() => FilterAudios(sl()));
 
   // Repository
@@ -138,6 +144,7 @@ Future<void> init() async {
       startRecording: sl(),
       stopRecording: sl(),
       importAudio: sl(),
+      uploadRecordingAsync: sl(),
       repository: sl(),
     ),
   );
@@ -146,15 +153,24 @@ Future<void> init() async {
   sl.registerLazySingleton(() => StartRecording(sl()));
   sl.registerLazySingleton(() => StopRecording(sl()));
   sl.registerLazySingleton(() => ImportAudio(sl()));
+  sl.registerLazySingleton(() => UploadRecordingAsync(sl()));
 
   // Repository
   sl.registerLazySingleton<RecordingRepository>(
-    () => RecordingRepositoryImpl(localDataSource: sl()),
+    () => RecordingRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
   );
 
   // Data sources
   sl.registerLazySingleton<RecordingLocalDataSource>(
     () => RecordingLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton<RecordingRemoteDataSource>(
+    () => RecordingRemoteDataSourceImpl(dio: sl()),
   );
 
   //! Features - Transcription

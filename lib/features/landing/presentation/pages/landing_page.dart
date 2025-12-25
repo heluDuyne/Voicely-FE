@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routes/app_router.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) {
+          return;
+        }
+        if (GoRouterState.of(context).uri.toString() != AppRoutes.recording) {
+          context.go(AppRoutes.recording);
+        }
+      });
+    }
+
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenHeight < 700;

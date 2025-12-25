@@ -1,8 +1,13 @@
-import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../injection_container/injection_container.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_screen.dart';
+import '../../features/audio_manager/presentation/bloc/audio_manager_bloc.dart';
+import '../../features/audio_manager/presentation/bloc/audio_manager_event.dart';
+import '../../features/audio_manager/presentation/pages/audio_manager_page.dart';
 import '../../features/landing/presentation/pages/landing_page.dart';
 import '../../features/recording/presentation/pages/recording_page.dart';
 import '../../features/transcription/presentation/pages/transcript_list_screen.dart';
@@ -24,6 +29,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String test = '/test';
+  static const String audioManager = '/audio-manager';
   static const String transcriptionResult = '/transcription-result';
   static const String transcription = '/transcription';
   static const String summary = '/summary';
@@ -81,6 +87,17 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.test,
       name: 'test',
       builder: (context, state) => const TestPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.audioManager,
+      name: 'audioManager',
+      builder: (context, state) => BlocProvider(
+        create: (context) => sl<AudioManagerBloc>()
+          ..add(const LoadUploadedAudios())
+          ..add(const LoadServerTasks())
+          ..add(const LoadPendingTasks()),
+        child: const AudioManagerPage(),
+      ),
     ),
     GoRoute(
       path: AppRoutes.transcription,

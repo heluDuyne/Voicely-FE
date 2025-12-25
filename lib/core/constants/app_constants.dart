@@ -1,13 +1,17 @@
 class AppConstants {
-  // API
+  // API for android emulator
   static const String baseUrl =
-      'https://congregational-bula-coaxingly.ngrok-free.dev';
+      'http://10.0.2.2:8000';
   // static const String apiVersion = '/v1'; // Commented out API version prefix
 
   // Endpoints
   static const String loginEndpoint = '/auth/login';
   static const String signupEndpoint = '/auth/register';
   static const String refreshTokenEndpoint = '/auth/refresh';
+  static const String audioFilesEndpoint = '/audio/files';
+  static const String audioUploadEndpoint = '/audio/upload';
+  static const String activeTasksEndpoint = '/tasks/active';
+  static const String pendingTasksEndpoint = '/tasks/pending';
 
   // Storage keys
   static const String accessTokenKey = 'access_token';

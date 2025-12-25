@@ -14,7 +14,6 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -23,7 +22,6 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -33,8 +31,7 @@ class _SignupPageState extends State<SignupPage> {
   void _onSignupPressed() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
-        SignupRequested(
-          name: _nameController.text.trim(),
+        RegisterRequested(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         ),
@@ -97,8 +94,11 @@ class _SignupPageState extends State<SignupPage> {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(state.message)));
-          } else if (state is AuthAuthenticated) {
-            context.go(AppRoutes.recording);
+          } else if (state is AuthRegistered) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+            context.go(AppRoutes.login);
           }
         },
         child: SafeArea(
@@ -160,26 +160,6 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                       ),
                       SizedBox(height: isSmallScreen ? 24 : 32),
-                      // Full Name Label
-                      const Text(
-                        'Full Name',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Full Name Field
-                      TextFormField(
-                        controller: _nameController,
-                        validator: ValidationUtils.validateName,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _buildInputDecoration(
-                          'Enter your full name',
-                        ),
-                      ),
-                      SizedBox(height: isSmallScreen ? 16 : 20),
                       // Email Label
                       const Text(
                         'Email',

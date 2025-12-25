@@ -47,12 +47,14 @@ dependencies:
 
   # Local storage
   shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.0.0
 
   # Routing
   go_router: ^12.1.1
 
   # UI components
   fluttertoast: ^8.2.4
+  curved_navigation_bar: ^1.0.3
 
   # Functional programming
   dartz: ^0.10.1

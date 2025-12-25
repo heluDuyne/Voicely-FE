@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Core
@@ -10,9 +11,25 @@ import '../features/auth/data/datasources/auth_local_data_source.dart';
 import '../features/auth/data/datasources/auth_remote_data_source.dart';
 import '../features/auth/data/repositories/auth_repository_impl.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
+import '../features/auth/domain/usecases/get_stored_auth.dart';
 import '../features/auth/domain/usecases/login_user.dart';
-import '../features/auth/domain/usecases/signup_user.dart';
+import '../features/auth/domain/usecases/refresh_token.dart';
+import '../features/auth/domain/usecases/logout_user.dart';
+import '../features/auth/domain/usecases/register_user.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
+
+// Features - Audio Manager
+import '../features/audio_manager/data/datasources/audio_manager_local_data_source.dart';
+import '../features/audio_manager/data/datasources/audio_manager_remote_data_source.dart';
+import '../features/audio_manager/data/repositories/audio_manager_repository_impl.dart';
+import '../features/audio_manager/domain/repositories/audio_manager_repository.dart';
+import '../features/audio_manager/domain/usecases/filter_audios.dart';
+import '../features/audio_manager/domain/usecases/get_pending_tasks.dart';
+import '../features/audio_manager/domain/usecases/get_server_tasks.dart';
+import '../features/audio_manager/domain/usecases/get_uploaded_audios.dart';
+import '../features/audio_manager/domain/usecases/search_audios.dart';
+import '../features/audio_manager/domain/usecases/upload_audio_file.dart';
+import '../features/audio_manager/presentation/bloc/audio_manager_bloc.dart';
 
 // Features - Recording
 import '../features/recording/data/datasources/recording_local_data_source.dart';
@@ -47,11 +64,22 @@ final sl = GetIt.instance;
 Future<void> init() async {
   //! Features - Auth
   // Bloc
-  sl.registerFactory(() => AuthBloc(loginUser: sl(), signupUser: sl()));
+  sl.registerFactory(
+    () => AuthBloc(
+      registerUser: sl(),
+      loginUser: sl(),
+      refreshToken: sl(),
+      logoutUser: sl(),
+      getStoredAuth: sl(),
+    ),
+  );
 
   // Use cases
+  sl.registerLazySingleton(() => RegisterUser(sl()));
   sl.registerLazySingleton(() => LoginUser(sl()));
-  sl.registerLazySingleton(() => SignupUser(sl()));
+  sl.registerLazySingleton(() => RefreshTokenUseCase(sl()));
+  sl.registerLazySingleton(() => LogoutUser(sl()));
+  sl.registerLazySingleton(() => GetStoredAuth(sl()));
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
@@ -65,6 +93,42 @@ Future<void> init() async {
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(dio: sl()),
+  );
+
+  //! Features - Audio Manager
+  // Bloc
+  sl.registerFactory(
+    () => AudioManagerBloc(
+      getUploadedAudios: sl(),
+      uploadAudioFile: sl(),
+      getServerTasks: sl(),
+      getPendingTasks: sl(),
+      searchAudios: sl(),
+      filterAudios: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => GetUploadedAudios(sl()));
+  sl.registerLazySingleton(() => UploadAudioFile(sl()));
+  sl.registerLazySingleton(() => GetServerTasks(sl()));
+  sl.registerLazySingleton(() => GetPendingTasks(sl()));
+  sl.registerLazySingleton(() => SearchAudios(sl()));
+  sl.registerLazySingleton(() => FilterAudios(sl()));
+
+  // Repository
+  sl.registerLazySingleton<AudioManagerRepository>(
+    () => AudioManagerRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<AudioManagerRemoteDataSource>(
+    () => AudioManagerRemoteDataSourceImpl(dio: sl()),
   );
 
   //! Features - Recording
@@ -159,9 +223,18 @@ Future<void> init() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
 
+  sl.registerLazySingleton(() => const FlutterSecureStorage());
+
   // Register AuthLocalDataSource first
   sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
+    () => AuthLocalDataSourceImpl(
+      sharedPreferences: sl(),
+      secureStorage: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<AudioManagerLocalDataSource>(
+    () => AudioManagerLocalDataSourceImpl(sharedPreferences: sl()),
   );
 
   final networkClient = NetworkClient(

@@ -22,7 +22,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<AuthBloc>(create: (_) => di.sl<AuthBloc>()),
+        BlocProvider<AuthBloc>(
+          create: (_) => di.sl<AuthBloc>()..add(CheckAuthStatus()),
+        ),
         BlocProvider<RecordingBloc>(create: (_) => di.sl<RecordingBloc>()),
         BlocProvider<TranscriptionBloc>(
           create: (_) => di.sl<TranscriptionBloc>(),

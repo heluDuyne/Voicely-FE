@@ -1,16 +1,13 @@
-import 'dart:developer'; // Added for logging
 import 'package:dio/dio.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../models/auth_response_model.dart';
+import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<Map<String, String>> login(String email, String password);
-  Future<Map<String, String>> signup(
-    String name,
-    String email,
-    String password,
-  );
-  Future<Map<String, String>> refresh(String refreshToken);
-  Future<Map<String, dynamic>> getCurrentUser(String accessToken);
+  Future<UserModel> register(String email, String password);
+  Future<AuthResponseModel> login(String email, String password);
+  Future<AuthResponseModel> refreshToken(String refreshToken);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -24,152 +21,112 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<Map<String, String>> login(String email, String password) async {
+  Future<UserModel> register(String email, String password) async {
+    try {
+      final response = await dio.post(
+        AppConstants.signupEndpoint,
+        data: {'email': email, 'password': password},
+      );
+
+      final payload = _extractPayload(
+        response,
+        fallbackMessage: 'Registration failed',
+      );
+      return UserModel.fromJson(payload);
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Registration failed');
+    }
+  }
+
+  @override
+  Future<AuthResponseModel> login(String email, String password) async {
     // Check for demo account login
     if (_enableDemoAccount &&
         email == _demoEmail &&
         password == _demoPassword) {
-      log('Demo account login successful');
-      return {
-        'access_token':
-            'demo_access_token_${DateTime.now().millisecondsSinceEpoch}',
-        'refresh_token':
+      return AuthResponseModel(
+        accessToken: 'demo_access_token_${DateTime.now().millisecondsSinceEpoch}',
+        refreshToken:
             'demo_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
-        'token_type': 'Bearer',
-      };
+        tokenType: 'bearer',
+      );
     }
 
     try {
-      log('Attempting login with email: $email'); // Log request details
       final response = await dio.post(
-        '/auth/login',
+        AppConstants.loginEndpoint,
         data: {'email': email, 'password': password},
       );
 
-      log('Login response: ${response.data}'); // Log response details
-
-      if (response.statusCode == 200) {
-        return {
-          'access_token': response.data['access_token'],
-          'refresh_token': response.data['refresh_token'],
-          'token_type': response.data['token_type'],
-        };
-      } else {
-        throw ServerException('Failed to login: ${response.statusMessage}');
-      }
-    } catch (e) {
-      if (e is DioException && e.response != null) {
-        log('DioException response: ${e.response!.data}'); // Log error response
-        if (e.response!.statusCode == 401) {
-          throw UnauthorizedException('Invalid credentials');
-        } else if (e.response!.statusCode == 400) {
-          throw ValidationException(
-            e.response!.data['detail'] ?? 'Validation error',
-          );
-        }
-      }
-      log('Login failed: ${e.toString()}'); // Log general error
-      throw ServerException('Login failed: ${e.toString()}');
-    }
-  }
-
-  @override
-  Future<Map<String, String>> signup(
-    String name,
-    String email,
-    String password,
-  ) async {
-    try {
-      final response = await dio.post(
-        '/auth/register', // Updated endpoint to match AppConstants
-        data: {'name': name, 'email': email, 'password': password},
+      final payload = _extractPayload(
+        response,
+        fallbackMessage: 'Login failed',
       );
-
-      if (response.statusCode == 201) {
-        return {
-          'access_token': response.data['access_token'],
-          'refresh_token': response.data['refresh_token'],
-          'token_type': response.data['token_type'],
-        };
-      } else {
-        throw ServerException('Failed to sign up: ${response.statusMessage}');
-      }
-    } catch (e) {
-      if (e is DioException && e.response != null) {
-        if (e.response!.statusCode == 400) {
-          throw ValidationException(
-            e.response!.data['detail'] ?? 'Validation error',
-          );
-        }
-      }
-      throw ServerException('Signup failed: ${e.toString()}');
+      return AuthResponseModel.fromJson(payload);
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Login failed');
     }
   }
 
   @override
-  Future<Map<String, String>> refresh(String refreshToken) async {
+  Future<AuthResponseModel> refreshToken(String refreshToken) async {
     try {
       final response = await dio.post(
-        '/auth/refresh',
+        AppConstants.refreshTokenEndpoint,
         data: {'refresh_token': refreshToken},
+        options: Options(extra: {'skipAuth': true}),
       );
 
-      if (response.statusCode == 200) {
-        return {
-          'access_token': response.data['access_token'],
-          'refresh_token': response.data['refresh_token'],
-          'token_type': response.data['token_type'],
-        };
-      } else {
-        throw ServerException(
-          'Failed to refresh token: ${response.statusMessage}',
-        );
-      }
-    } catch (e) {
-      if (e is DioException && e.response != null) {
-        if (e.response!.statusCode == 400) {
-          throw ValidationException(
-            e.response!.data['detail'] ?? 'Validation error',
-          );
-        }
-      }
-      throw ServerException('Token refresh failed: ${e.toString()}');
+      final payload = _extractPayload(
+        response,
+        fallbackMessage: 'Token refresh failed',
+      );
+      return AuthResponseModel.fromJson(payload);
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Token refresh failed');
     }
   }
 
-  @override
-  Future<Map<String, dynamic>> getCurrentUser(String accessToken) async {
-    // Check for demo account token
-    if (_enableDemoAccount && accessToken.startsWith('demo_access_token_')) {
-      log('Returning demo user data');
-      return {
-        'id': 'demo_user_001',
-        'name': 'Demo User',
-        'email': _demoEmail,
-        'created_at': DateTime.now().toIso8601String(),
-      };
+  Map<String, dynamic> _extractPayload(
+    Response<dynamic> response, {
+    required String fallbackMessage,
+  }) {
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw ServerException('Invalid response format');
     }
 
-    try {
-      final response = await dio.get(
-        '/auth/me',
-        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
-      );
-
-      if (response.statusCode == 200) {
-        return response.data;
-      } else {
-        throw ServerException(
-          'Failed to fetch user info: ${response.statusMessage}',
-        );
+    final success = data['success'] == true;
+    final statusCode = response.statusCode ?? 500;
+    if (statusCode >= 200 && statusCode < 300 && success) {
+      final payload = data['data'];
+      if (payload is Map<String, dynamic>) {
+        return payload;
       }
-    } catch (e) {
-      if (e is DioException && e.response != null) {
-        if (e.response!.statusCode == 401) {
-          throw UnauthorizedException('Invalid or expired token');
-        }
-      }
-      throw ServerException('Fetching user info failed: ${e.toString()}');
+      throw ServerException('Invalid response data');
     }
+
+    final message = data['message']?.toString() ?? fallbackMessage;
+    final code = data['code'] is int ? data['code'] as int : statusCode;
+    throw ServerException(message, code: code);
+  }
+
+  ServerException _handleDioException(
+    DioException exception, {
+    required String fallbackMessage,
+  }) {
+    final data = exception.response?.data;
+    if (data is Map<String, dynamic>) {
+      final message = data['message']?.toString() ??
+          data['detail']?.toString() ??
+          fallbackMessage;
+      final code =
+          data['code'] is int ? data['code'] as int : exception.response?.statusCode ?? 500;
+      return ServerException(message, code: code);
+    }
+    return ServerException(
+      fallbackMessage,
+      code: exception.response?.statusCode ?? 500,
+    );
   }
 }

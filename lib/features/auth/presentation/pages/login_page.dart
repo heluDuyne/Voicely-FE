@@ -47,6 +47,9 @@ class _LoginPageState extends State<LoginPage> {
               context,
             ).showSnackBar(SnackBar(content: Text(state.message)));
           } else if (state is AuthAuthenticated) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
             context.go(AppRoutes.recording);
           }
         },

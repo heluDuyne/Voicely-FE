@@ -11,17 +11,43 @@ class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
-class AuthAuthenticated extends AuthState {
-  final String accessToken;
-  final String refreshToken;
+class AuthRegistered extends AuthState {
+  final User user;
+  final String message;
 
-  const AuthAuthenticated({
-    required this.accessToken,
-    required this.refreshToken,
+  const AuthRegistered({
+    required this.user,
+    required this.message,
   });
 
   @override
-  List<Object> get props => [accessToken, refreshToken];
+  List<Object?> get props => [user, message];
+}
+
+class AuthAuthenticated extends AuthState {
+  final AuthResponse authResponse;
+  final String message;
+
+  const AuthAuthenticated({
+    required this.authResponse,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [authResponse, message];
+}
+
+class AuthTokenRefreshed extends AuthState {
+  final AuthResponse authResponse;
+  final String message;
+
+  const AuthTokenRefreshed({
+    required this.authResponse,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [authResponse, message];
 }
 
 class AuthUnauthenticated extends AuthState {}

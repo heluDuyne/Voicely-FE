@@ -17,14 +17,6 @@ class ProfileScreen extends StatelessWidget {
     subscriptionType: SubscriptionType.premium,
   );
 
-  void _onBackPressed(BuildContext context) {
-    context.pop();
-  }
-
-  void _onDonePressed(BuildContext context) {
-    context.pop();
-  }
-
   void _onEditAvatarPressed(BuildContext context) {
     ScaffoldMessenger.of(
       context,
@@ -105,153 +97,103 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF101822),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: screenWidth > 600 ? screenWidth * 0.1 : 16.0,
-                vertical: 12,
-              ),
-              child: Row(
-                children: [
-                  // Back button
-                  GestureDetector(
-                    onTap: () => _onBackPressed(context),
-                    child: const Icon(
-                      Icons.chevron_left,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
-                  // Title
-                  const Expanded(
-                    child: Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  // Done button
-                  GestureDetector(
-                    onTap: () => _onDonePressed(context),
-                    child: const Text(
-                      'Done',
-                      style: TextStyle(
-                        color: Color(0xFF3B82F6),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: screenWidth > 600 ? screenWidth * 0.1 : 24.0,
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    // Avatar
-                    ProfileAvatar(
-                      imageUrl: user.avatarUrl,
-                      size: 120,
-                      onEditTap: () => _onEditAvatarPressed(context),
-                    ),
-                    const SizedBox(height: 16),
-                    // Name
-                    Text(
-                      user.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Subscription badge
-                    SubscriptionBadge(
-                      label: user.subscriptionLabel,
-                      isPremium: user.isPremium,
-                    ),
-                    const SizedBox(height: 32),
-                    // Account Settings section
-                    ProfileMenuSection(
-                      title: 'Account Settings',
-                      items: [
-                        ProfileMenuItem(
-                          icon: Icons.person_outline,
-                          title: 'Edit Profile',
-                          onTap: () => _onEditProfilePressed(context),
-                        ),
-                        ProfileMenuItem(
-                          icon: Icons.credit_card_outlined,
-                          title: 'Manage Subscription',
-                          onTap: () => _onManageSubscriptionPressed(context),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // App Preferences section
-                    ProfileMenuSection(
-                      title: 'App Preferences',
-                      items: [
-                        ProfileMenuItem(
-                          icon: Icons.notifications_outlined,
-                          title: 'Notifications',
-                          onTap: () => _onNotificationsPressed(context),
-                        ),
-                        ProfileMenuItem(
-                          icon: Icons.contrast,
-                          title: 'Appearance',
-                          onTap: () => _onAppearancePressed(context),
-                        ),
-                        ProfileMenuItem(
-                          icon: Icons.help_outline,
-                          title: 'Help & Support',
-                          onTap: () => _onHelpSupportPressed(context),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                  ],
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              backgroundColor: const Color(0xFF101822),
+              elevation: 0,
+              centerTitle: true,
+              automaticallyImplyLeading: false,
+              floating: true,
+              snap: true,
+              pinned: false,
+              title: const Text(
+                'Profile',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
               ),
+              actions: [
+                IconButton(
+                  onPressed: () => _onLogoutPressed(context),
+                  icon: const Icon(
+                    Icons.logout,
+                    color: Color(0xFFEF4444),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
             ),
-            // Logout button
-            Padding(
+            SliverPadding(
               padding: EdgeInsets.symmetric(
                 horizontal: screenWidth > 600 ? screenWidth * 0.1 : 24.0,
               ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () => _onLogoutPressed(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B2635),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 24),
+                  ProfileAvatar(
+                    imageUrl: user.avatarUrl,
+                    size: 120,
+                    onEditTap: () => _onEditAvatarPressed(context),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    user.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                    elevation: 0,
                   ),
-                  child: const Text(
-                    'Logout',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  const SizedBox(height: 8),
+                  SubscriptionBadge(
+                    label: user.subscriptionLabel,
+                    isPremium: user.isPremium,
                   ),
-                ),
+                  const SizedBox(height: 32),
+                  ProfileMenuSection(
+                    title: 'Account Settings',
+                    items: [
+                      ProfileMenuItem(
+                        icon: Icons.person_outline,
+                        title: 'Edit Profile',
+                        onTap: () => _onEditProfilePressed(context),
+                      ),
+                      ProfileMenuItem(
+                        icon: Icons.credit_card_outlined,
+                        title: 'Manage Subscription',
+                        onTap: () => _onManageSubscriptionPressed(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  ProfileMenuSection(
+                    title: 'App Preferences',
+                    items: [
+                      ProfileMenuItem(
+                        icon: Icons.notifications_outlined,
+                        title: 'Notifications',
+                        onTap: () => _onNotificationsPressed(context),
+                      ),
+                      ProfileMenuItem(
+                        icon: Icons.contrast,
+                        title: 'Appearance',
+                        onTap: () => _onAppearancePressed(context),
+                      ),
+                      ProfileMenuItem(
+                        icon: Icons.help_outline,
+                        title: 'Help & Support',
+                        onTap: () => _onHelpSupportPressed(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                ]),
               ),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),

@@ -6,6 +6,7 @@ class AudioFilterModel extends AudioFilter {
     super.fromDate,
     super.toDate,
     super.hasTranscript,
+    super.hasSummary,
     super.order,
     super.page,
     super.limit,
@@ -31,6 +32,9 @@ class AudioFilterModel extends AudioFilter {
     }
     if (hasTranscript != null) {
       params['has_transcript'] = hasTranscript;
+    }
+    if (hasSummary != null) {
+      params['has_summary'] = hasSummary;
     }
     if (status != null && status!.isNotEmpty) {
       params['status'] = status;

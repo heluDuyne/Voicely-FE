@@ -100,7 +100,7 @@ final GoRouter appRouter = GoRouter(
               create:
                   (context) => sl<AudioManagerBloc>()
                     ..add(const LoadUploadedAudios())
-                    ..add(const LoadPendingTasks()),
+                    ..add(const LoadPendingAudios()),
             ),
             BlocProvider(create: (context) => sl<TaskMonitorBloc>()),
           ],

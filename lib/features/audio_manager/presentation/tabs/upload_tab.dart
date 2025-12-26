@@ -10,7 +10,7 @@ import '../bloc/audio_manager_bloc.dart';
 import '../bloc/audio_manager_event.dart';
 import '../bloc/audio_manager_state.dart';
 import '../widgets/audio_player_dialog.dart';
-import '../widgets/common_task_item.dart';
+import '../widgets/audio_file_list_item.dart';
 import '../widgets/filter_dialog.dart';
 import '../widgets/search_filter_bar.dart';
 
@@ -191,11 +191,8 @@ class _UploadTabState extends State<UploadTab> {
                               );
                             }
                             final audio = state.audios[index];
-                            return CommonTaskItem(
-                              icon: Icons.audiotrack,
-                              iconColor: const Color(0xFF3B82F6),
-                              title: audio.filename,
-                              description: _buildAudioDescription(audio),
+                            return AudioFileListItem(
+                              audioFile: audio,
                               onTap: () => _showAudioPlayer(context, audio),
                             );
                           },
@@ -263,54 +260,4 @@ class _UploadTabState extends State<UploadTab> {
     return null;
   }
 
-  String _buildAudioDescription(AudioFile audio) {
-    final parts = <String>[];
-    if (audio.duration != null) {
-      parts.add('Duration ${_formatDuration(audio.duration!)}');
-    }
-    if (audio.status != null && audio.status!.isNotEmpty) {
-      parts.add('Status: ${_formatStatus(audio.status!)}');
-    }
-    if (audio.uploadDate != null) {
-      parts.add('Uploaded ${_formatDate(audio.uploadDate!)}');
-    }
-    if (audio.fileSize != null) {
-      parts.add(_formatBytes(audio.fileSize!));
-    }
-    if (parts.isEmpty) {
-      return 'Tap to play';
-    }
-    return parts.join(' • ');
-  }
-
-  String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '${date.year}-$month-$day';
-  }
-
-  String _formatBytes(int bytes) {
-    final mb = bytes / (1024 * 1024);
-    return '${mb.toStringAsFixed(1)} MB';
-  }
-
-  String _formatDuration(double seconds) {
-    final duration = Duration(seconds: seconds.round());
-    final minutes = duration.inMinutes;
-    final remainingSeconds = duration.inSeconds.remainder(60);
-    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
-  String _formatStatus(String status) {
-    final normalized = status.trim().toLowerCase();
-    if (normalized.isEmpty) {
-      return 'Unknown';
-    }
-    final words =
-        normalized.replaceAll(RegExp(r'[_-]+'), ' ').split(' ');
-    return words
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .join(' ');
-  }
 }

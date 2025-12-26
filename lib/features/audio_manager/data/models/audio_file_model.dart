@@ -16,6 +16,7 @@ class AudioFileModel extends AudioFile {
     super.confidenceScore,
     super.createdAt,
     super.updatedAt,
+    super.isSummarize,
     super.transcriptionId,
     super.hasSummary,
   });
@@ -67,6 +68,10 @@ class AudioFileModel extends AudioFile {
     final originalFilename =
         _stringFrom(json['original_filename']) ??
         _stringFrom(json['filename']);
+    final parsedHasSummary =
+        json['has_summary'] as bool? ?? json['is_summarize'] as bool?;
+    final parsedIsSummarize =
+        json['is_summarize'] as bool? ?? parsedHasSummary;
 
     return AudioFileModel(
       id: _intFrom(json['id']) ?? 0,
@@ -83,8 +88,9 @@ class AudioFileModel extends AudioFile {
       confidenceScore: _doubleFrom(json['confidence_score']),
       createdAt: _dateFrom(json['created_at']),
       updatedAt: _dateFrom(json['updated_at']),
+      isSummarize: parsedIsSummarize,
       transcriptionId: _intFrom(json['transcription_id']),
-      hasSummary: json['has_summary'] as bool?,
+      hasSummary: parsedHasSummary,
     );
   }
 
@@ -104,6 +110,7 @@ class AudioFileModel extends AudioFile {
       'confidence_score': confidenceScore,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'is_summarize': isSummarize,
       'transcription_id': transcriptionId,
       'has_summary': hasSummary,
     };

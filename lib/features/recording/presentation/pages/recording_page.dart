@@ -68,7 +68,7 @@ class _RecordingPageState extends State<RecordingPage> {
           create:
               (context) => sl<AudioManagerBloc>()
                 ..add(const LoadUploadedAudios())
-                ..add(const LoadPendingTasks()),
+                ..add(const LoadPendingAudios()),
         ),
         BlocProvider<TaskMonitorBloc>(
           create: (context) => sl<TaskMonitorBloc>(),

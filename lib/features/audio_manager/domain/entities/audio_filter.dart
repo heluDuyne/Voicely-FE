@@ -5,6 +5,7 @@ class AudioFilter extends Equatable {
   final DateTime? fromDate;
   final DateTime? toDate;
   final bool? hasTranscript;
+  final bool? hasSummary;
   final String order;
   final int page;
   final int limit;
@@ -15,6 +16,7 @@ class AudioFilter extends Equatable {
     this.fromDate,
     this.toDate,
     this.hasTranscript,
+    this.hasSummary,
     this.order = 'DESC',
     this.page = 1,
     this.limit = 10,
@@ -26,6 +28,7 @@ class AudioFilter extends Equatable {
     DateTime? fromDate,
     DateTime? toDate,
     bool? hasTranscript,
+    bool? hasSummary,
     String? order,
     int? page,
     int? limit,
@@ -36,6 +39,7 @@ class AudioFilter extends Equatable {
       fromDate: fromDate ?? this.fromDate,
       toDate: toDate ?? this.toDate,
       hasTranscript: hasTranscript ?? this.hasTranscript,
+      hasSummary: hasSummary ?? this.hasSummary,
       order: order ?? this.order,
       page: page ?? this.page,
       limit: limit ?? this.limit,
@@ -49,6 +53,7 @@ class AudioFilter extends Equatable {
     fromDate,
     toDate,
     hasTranscript,
+    hasSummary,
     order,
     page,
     limit,

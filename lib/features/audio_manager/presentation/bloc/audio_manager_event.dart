@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
+import 'pending_audio_type.dart';
 
 abstract class AudioManagerEvent extends Equatable {
   const AudioManagerEvent();
@@ -38,6 +39,36 @@ class LoadServerTasks extends AudioManagerEvent {
 
 class LoadPendingTasks extends AudioManagerEvent {
   const LoadPendingTasks();
+}
+
+class LoadPendingAudios extends AudioManagerEvent {
+  const LoadPendingAudios();
+}
+
+class LoadMorePendingAudios extends AudioManagerEvent {
+  final PendingAudioType type;
+
+  const LoadMorePendingAudios(this.type);
+
+  @override
+  List<Object?> get props => [type];
+}
+
+class SearchPendingAudios extends AudioManagerEvent {
+  final PendingAudioType type;
+  final String? searchQuery;
+  final DateTime? fromDate;
+  final DateTime? toDate;
+
+  const SearchPendingAudios({
+    required this.type,
+    this.searchQuery,
+    this.fromDate,
+    this.toDate,
+  });
+
+  @override
+  List<Object?> get props => [type, searchQuery, fromDate, toDate];
 }
 
 class SearchAudios extends AudioManagerEvent {

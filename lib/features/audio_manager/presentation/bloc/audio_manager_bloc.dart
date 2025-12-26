@@ -9,6 +9,7 @@ import '../../domain/usecases/search_audios.dart' as search_usecase;
 import '../../domain/usecases/upload_audio_file.dart' as upload_usecase;
 import 'audio_manager_event.dart';
 import 'audio_manager_state.dart';
+import 'pending_audio_type.dart';
 
 class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
   final GetUploadedAudios getUploadedAudios;
@@ -30,6 +31,9 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
     on<UploadAudioFile>(_onUploadAudioFile);
     on<LoadServerTasks>(_onLoadServerTasks);
     on<LoadPendingTasks>(_onLoadPendingTasks);
+    on<LoadPendingAudios>(_onLoadPendingAudios);
+    on<SearchPendingAudios>(_onSearchPendingAudios);
+    on<LoadMorePendingAudios>(_onLoadMorePendingAudios);
     on<SearchAudios>(_onSearchAudios);
     on<ApplyFilter>(_onApplyFilter);
     on<RefreshAllData>(_onRefreshAllData);
@@ -267,6 +271,174 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
     );
   }
 
+  Future<void> _onLoadPendingAudios(
+    LoadPendingAudios event,
+    Emitter<AudioManagerState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        isLoadingPendingAudios: true,
+        pendingErrorMessage: null,
+      ),
+    );
+
+    final untranscribedResult = await getUploadedAudios(
+      _pendingFilter(
+        type: PendingAudioType.untranscribed,
+        page: 1,
+        limit: 3,
+      ),
+    );
+
+    final unsummarizedResult = await getUploadedAudios(
+      _pendingFilter(
+        type: PendingAudioType.unsummarized,
+        page: 1,
+        limit: 3,
+      ),
+    );
+
+    untranscribedResult.fold(
+      (failure) => emit(
+        state.copyWith(
+          isLoadingPendingAudios: false,
+          pendingErrorMessage: failure.message,
+        ),
+      ),
+      (untranscribedPage) {
+        unsummarizedResult.fold(
+          (failure) => emit(
+            state.copyWith(
+              isLoadingPendingAudios: false,
+              pendingErrorMessage: failure.message,
+            ),
+          ),
+          (unsummarizedPage) => emit(
+            state.copyWith(
+              isLoadingPendingAudios: false,
+              pendingUntranscribedAudios: untranscribedPage.items,
+              pendingUnsummarizedAudios: unsummarizedPage.items,
+              pendingUntranscribedCount: untranscribedPage.total,
+              pendingUnsummarizedCount: unsummarizedPage.total,
+              pendingErrorMessage: null,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _onSearchPendingAudios(
+    SearchPendingAudios event,
+    Emitter<AudioManagerState> emit,
+  ) async {
+    final normalizedSearch = (event.searchQuery ?? '').trim();
+    final search =
+        normalizedSearch.isEmpty ? null : normalizedSearch;
+
+    emit(
+      state.copyWith(
+        pendingDetailIsLoading: true,
+        pendingDetailIsLoadingMore: false,
+        pendingDetailType: event.type,
+        pendingDetailAudios: const [],
+        pendingDetailHasMore: true,
+        pendingDetailPage: 1,
+        pendingDetailSearchQuery: normalizedSearch,
+        pendingDetailFromDate: event.fromDate,
+        pendingDetailToDate: event.toDate,
+        pendingErrorMessage: null,
+      ),
+    );
+
+    final result = await getUploadedAudios(
+      _pendingFilter(
+        type: event.type,
+        page: 1,
+        limit: 10,
+        search: search,
+        fromDate: event.fromDate,
+        toDate: event.toDate,
+      ),
+    );
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          pendingDetailIsLoading: false,
+          pendingErrorMessage: failure.message,
+        ),
+      ),
+      (page) => emit(
+        state.copyWith(
+          pendingDetailIsLoading: false,
+          pendingDetailAudios: page.items,
+          pendingDetailPage: page.page,
+          pendingDetailHasMore:
+              page.hasNextPage ?? page.items.length < page.total,
+          pendingErrorMessage: null,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onLoadMorePendingAudios(
+    LoadMorePendingAudios event,
+    Emitter<AudioManagerState> emit,
+  ) async {
+    if (state.pendingDetailType != event.type ||
+        state.pendingDetailIsLoading ||
+        state.pendingDetailIsLoadingMore ||
+        !state.pendingDetailHasMore) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        pendingDetailIsLoadingMore: true,
+        pendingErrorMessage: null,
+      ),
+    );
+
+    final nextPage = state.pendingDetailPage + 1;
+    final normalizedSearch = state.pendingDetailSearchQuery.trim();
+    final search =
+        normalizedSearch.isEmpty ? null : normalizedSearch;
+
+    final result = await getUploadedAudios(
+      _pendingFilter(
+        type: event.type,
+        page: nextPage,
+        limit: 10,
+        search: search,
+        fromDate: state.pendingDetailFromDate,
+        toDate: state.pendingDetailToDate,
+      ),
+    );
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          pendingDetailIsLoadingMore: false,
+          pendingErrorMessage: failure.message,
+        ),
+      ),
+      (page) => emit(
+        state.copyWith(
+          pendingDetailIsLoadingMore: false,
+          pendingDetailAudios: [
+            ...state.pendingDetailAudios,
+            ...page.items,
+          ],
+          pendingDetailPage: page.page,
+          pendingDetailHasMore:
+              page.hasNextPage ?? page.items.length < page.total,
+          pendingErrorMessage: null,
+        ),
+      ),
+    );
+  }
+
   void _onRefreshAllData(
     RefreshAllData event,
     Emitter<AudioManagerState> emit,
@@ -278,7 +450,7 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
         toDate: state.toDate,
       ),
     );
-    add(const LoadPendingTasks());
+    add(const LoadPendingAudios());
   }
 
   Future<void> _onLoadMoreAudios(
@@ -329,5 +501,26 @@ class AudioManagerBloc extends Bloc<AudioManagerEvent, AudioManagerState> {
     Emitter<AudioManagerState> emit,
   ) {
     emit(state.copyWith(errorMessage: null, successMessage: null));
+  }
+
+  AudioFilter _pendingFilter({
+    required PendingAudioType type,
+    required int page,
+    required int limit,
+    String? search,
+    DateTime? fromDate,
+    DateTime? toDate,
+  }) {
+    return AudioFilter(
+      search: search,
+      fromDate: fromDate,
+      toDate: toDate,
+      hasTranscript: type == PendingAudioType.untranscribed ? false : true,
+      hasSummary: type == PendingAudioType.unsummarized ? false : null,
+      order: 'DESC',
+      page: page,
+      limit: limit,
+      status: 'completed',
+    );
   }
 }

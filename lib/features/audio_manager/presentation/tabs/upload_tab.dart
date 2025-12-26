@@ -9,6 +9,7 @@ import '../../domain/entities/audio_file.dart';
 import '../bloc/audio_manager_bloc.dart';
 import '../bloc/audio_manager_event.dart';
 import '../bloc/audio_manager_state.dart';
+import '../pages/audio_detail_screen.dart';
 import '../widgets/audio_player_dialog.dart';
 import '../widgets/audio_file_list_item.dart';
 import '../widgets/filter_dialog.dart';
@@ -56,6 +57,14 @@ class _UploadTabState extends State<UploadTab> {
         bloc.add(const LoadMoreAudios());
       }
     }
+  }
+
+  void _openDetail(BuildContext context, AudioFile audioFile) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AudioDetailScreen(audioFile: audioFile),
+      ),
+    );
   }
 
   void _showAudioPlayer(BuildContext context, AudioFile audioFile) {
@@ -194,6 +203,7 @@ class _UploadTabState extends State<UploadTab> {
                             return AudioFileListItem(
                               audioFile: audio,
                               onTap: () => _showAudioPlayer(context, audio),
+                              onChevronTap: () => _openDetail(context, audio),
                             );
                           },
                         ),

@@ -5,7 +5,10 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
   flutter_secure_storage_windows
+  irondash_engine_context
   record_windows
+  super_native_extensions
+  url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

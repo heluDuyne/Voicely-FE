@@ -7,6 +7,7 @@ import '../bloc/audio_manager_bloc.dart';
 import '../bloc/audio_manager_event.dart';
 import '../bloc/audio_manager_state.dart';
 import '../bloc/pending_audio_type.dart';
+import 'audio_detail_screen.dart';
 import '../widgets/audio_file_list_item.dart';
 import '../widgets/audio_player_dialog.dart';
 import '../widgets/filter_dialog.dart';
@@ -180,6 +181,7 @@ class _PendingAudioDetailScreenState extends State<PendingAudioDetailScreen> {
                       return AudioFileListItem(
                         audioFile: audio,
                         onTap: () => _showAudioPlayer(context, audio),
+                        onChevronTap: () => _openDetail(context, audio),
                         showPendingStatus: true,
                       );
                     },
@@ -218,6 +220,14 @@ class _PendingAudioDetailScreenState extends State<PendingAudioDetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _openDetail(BuildContext context, AudioFile audioFile) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AudioDetailScreen(audioFile: audioFile),
       ),
     );
   }

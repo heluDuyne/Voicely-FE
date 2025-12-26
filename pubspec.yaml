@@ -55,6 +55,7 @@ dependencies:
   # UI components
   fluttertoast: ^8.2.4
   curved_navigation_bar: ^1.0.3
+  flutter_quill: ^9.0.0
 
   # Functional programming
   dartz: ^0.10.1

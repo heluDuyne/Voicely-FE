@@ -17,6 +17,7 @@ class AudioFileModel extends AudioFile {
     super.createdAt,
     super.updatedAt,
     super.isSummarize,
+    super.summary,
     super.transcriptionId,
     super.hasSummary,
   });
@@ -89,6 +90,7 @@ class AudioFileModel extends AudioFile {
       createdAt: _dateFrom(json['created_at']),
       updatedAt: _dateFrom(json['updated_at']),
       isSummarize: parsedIsSummarize,
+      summary: _stringFrom(json['summary']),
       transcriptionId: _intFrom(json['transcription_id']),
       hasSummary: parsedHasSummary,
     );
@@ -111,6 +113,7 @@ class AudioFileModel extends AudioFile {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'is_summarize': isSummarize,
+      'summary': summary,
       'transcription_id': transcriptionId,
       'has_summary': hasSummary,
     };

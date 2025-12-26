@@ -5,19 +5,19 @@ import 'common_task_item.dart';
 class AudioFileListItem extends StatelessWidget {
   final AudioFile audioFile;
   final VoidCallback? onTap;
+  final VoidCallback? onChevronTap;
   final IconData icon;
   final Color iconColor;
   final bool showPendingStatus;
-  final bool showStatusIcon;
 
   const AudioFileListItem({
     super.key,
     required this.audioFile,
     this.onTap,
+    this.onChevronTap,
     this.icon = Icons.audiotrack,
     this.iconColor = const Color(0xFF3B82F6),
     this.showPendingStatus = false,
-    this.showStatusIcon = true,
   });
 
   @override
@@ -28,8 +28,9 @@ class AudioFileListItem extends StatelessWidget {
       title: audioFile.originalFilename ?? audioFile.filename,
       description: _buildDescription(),
       onTap: onTap ?? () {},
-      showChevron: !showStatusIcon,
-      trailing: showStatusIcon ? _buildTrailing() : null,
+      onChevronTap: onChevronTap,
+      showChevron: true,
+      trailing: null,
     );
   }
 
@@ -48,35 +49,14 @@ class AudioFileListItem extends StatelessWidget {
     if (audioFile.fileSize != null) {
       parts.add(_formatBytes(audioFile.fileSize!));
     }
-    if (showPendingStatus && _needsSummary()) {
-      parts.add('Not summarized');
-    }
-    return parts.isEmpty ? 'Tap to view' : parts.join(' • ');
-  }
-
-  Widget _buildTrailing() {
     if (showPendingStatus) {
       if (_needsTranscription()) {
-        return const Icon(Icons.description_outlined, color: Colors.orange);
-      }
-      if (_needsSummary()) {
-        return const Icon(Icons.summarize, color: Colors.blue);
+        parts.add('Needs transcription');
+      } else if (_needsSummary()) {
+        parts.add('Needs summary');
       }
     }
-
-    final status = audioFile.status?.toLowerCase().trim();
-    switch (status) {
-      case 'completed':
-        return const Icon(Icons.check_circle, color: Colors.green);
-      case 'processing':
-      case 'queued':
-      case 'pending':
-        return const Icon(Icons.sync, color: Colors.orange);
-      case 'failed':
-        return const Icon(Icons.error, color: Colors.redAccent);
-      default:
-        return Icon(Icons.chevron_right, color: Colors.grey[600]);
-    }
+    return parts.isEmpty ? 'Tap to view' : parts.join(' • ');
   }
 
   bool _needsTranscription() {

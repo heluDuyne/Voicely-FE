@@ -6,6 +6,7 @@ import '../bloc/audio_manager_bloc.dart';
 import '../bloc/audio_manager_event.dart';
 import '../bloc/audio_manager_state.dart';
 import '../bloc/pending_audio_type.dart';
+import '../pages/audio_detail_screen.dart';
 import '../pages/pending_audio_detail_screen.dart';
 import '../widgets/audio_file_list_item.dart';
 import '../widgets/audio_player_dialog.dart';
@@ -69,6 +70,7 @@ class _PendingTabState extends State<PendingTab> {
                         type: PendingAudioType.untranscribed,
                         onSeeAll: _openSeeAll,
                         onTapAudio: _showAudioPlayer,
+                        onChevronTap: _openDetail,
                       ),
                       const SizedBox(height: 24),
                       _PendingSection(
@@ -78,6 +80,7 @@ class _PendingTabState extends State<PendingTab> {
                         type: PendingAudioType.unsummarized,
                         onSeeAll: _openSeeAll,
                         onTapAudio: _showAudioPlayer,
+                        onChevronTap: _openDetail,
                       ),
                       if (isEmpty && !state.isLoadingPendingAudios)
                         const Padding(
@@ -144,6 +147,14 @@ class _PendingTabState extends State<PendingTab> {
     );
   }
 
+  void _openDetail(BuildContext context, AudioFile audioFile) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AudioDetailScreen(audioFile: audioFile),
+      ),
+    );
+  }
+
   void _showAudioPlayer(BuildContext context, AudioFile audioFile) {
     final filePath = audioFile.filePath ?? '';
     if (filePath.isEmpty) {
@@ -172,6 +183,7 @@ class _PendingSection extends StatelessWidget {
   final PendingAudioType type;
   final void Function(PendingAudioType, String) onSeeAll;
   final void Function(BuildContext, AudioFile) onTapAudio;
+  final void Function(BuildContext, AudioFile) onChevronTap;
 
   const _PendingSection({
     required this.title,
@@ -180,6 +192,7 @@ class _PendingSection extends StatelessWidget {
     required this.type,
     required this.onSeeAll,
     required this.onTapAudio,
+    required this.onChevronTap,
   });
 
   @override
@@ -225,6 +238,7 @@ class _PendingSection extends StatelessWidget {
                 (audio) => AudioFileListItem(
                   audioFile: audio,
                   onTap: () => onTapAudio(context, audio),
+                  onChevronTap: () => onChevronTap(context, audio),
                   showPendingStatus: true,
                 ),
               ),

@@ -45,8 +45,12 @@ class AudioManagerRepositoryImpl implements AudioManagerRepository {
             search: filter.search,
             fromDate: filter.fromDate,
             toDate: filter.toDate,
+            hasTranscript: filter.hasTranscript,
+            hasSummary: filter.hasSummary,
+            order: filter.order,
             page: filter.page,
             limit: filter.limit,
+            status: filter.status,
           ),
         );
         await localDataSource.cacheAudioFiles(page);

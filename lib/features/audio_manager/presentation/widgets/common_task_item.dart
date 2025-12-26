@@ -6,6 +6,7 @@ class CommonTaskItem extends StatelessWidget {
   final String title;
   final String description;
   final VoidCallback onTap;
+  final VoidCallback? onChevronTap;
   final bool showChevron;
   final Widget? trailing;
   final bool isLoading;
@@ -17,6 +18,7 @@ class CommonTaskItem extends StatelessWidget {
     required this.title,
     required this.description,
     required this.onTap,
+    this.onChevronTap,
     this.showChevron = true,
     this.trailing,
     this.isLoading = false,
@@ -90,7 +92,10 @@ class CommonTaskItem extends StatelessWidget {
             if (trailing != null)
               trailing!
             else if (showChevron)
-              Icon(Icons.chevron_right, color: Colors.grey[600]),
+              IconButton(
+                onPressed: onChevronTap ?? onTap,
+                icon: Icon(Icons.chevron_right, color: Colors.grey[600]),
+              ),
           ],
         ),
       ),

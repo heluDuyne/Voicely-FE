@@ -16,6 +16,7 @@ class AudioFile extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final bool? isSummarize;
+  final String? summary;
   final int? transcriptionId;
   final bool? hasSummary;
 
@@ -35,6 +36,7 @@ class AudioFile extends Equatable {
     this.createdAt,
     this.updatedAt,
     this.isSummarize,
+    this.summary,
     this.transcriptionId,
     this.hasSummary,
   });
@@ -56,6 +58,7 @@ class AudioFile extends Equatable {
     createdAt,
     updatedAt,
     isSummarize,
+    summary,
     transcriptionId,
     hasSummary,
   ];

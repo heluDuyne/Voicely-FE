@@ -23,10 +23,13 @@ class ChatMessageModel extends ChatMessage {
 
     final roleValue = json['role']?.toString();
 
+    final contentValue =
+        json['response']?.toString() ?? json['content']?.toString() ?? '';
+
     return ChatMessageModel(
       messageId: json['message_id']?.toString() ?? '',
       role: roleValue?.toLowerCase() ?? 'assistant',
-      content: json['content']?.toString() ?? '',
+      content: contentValue,
       intent: json['intent']?.toString(),
       audioReferences: audioReferences,
       noteReferences: noteReferences,
@@ -46,6 +49,37 @@ class ChatMessageModel extends ChatMessage {
       suggestedQuestions: _parseSuggestions(result['suggested_questions']),
       createdAt: DateTime.now(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'message_id': messageId,
+      'role': role,
+      'response': content,
+      'intent': intent,
+      'audio_references':
+          audioReferences
+              ?.map(
+                (ref) => {
+                  'audio_id': ref.audioId,
+                  'title': ref.title,
+                  'duration': ref.duration,
+                  'created_at': ref.createdAt.toIso8601String(),
+                },
+              )
+              .toList(),
+      'note_references':
+          noteReferences
+              ?.map(
+                (ref) => {
+                  'note_id': ref.noteId,
+                  'title': ref.title,
+                },
+              )
+              .toList(),
+      'suggested_questions': suggestedQuestions,
+      'created_at': createdAt.toIso8601String(),
+    };
   }
 
   static DateTime? _parseDate(dynamic value) {

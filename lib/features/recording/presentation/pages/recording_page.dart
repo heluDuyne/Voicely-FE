@@ -9,6 +9,8 @@ import '../../../audio_manager/presentation/bloc/task_monitor_bloc.dart';
 import '../../../audio_manager/presentation/pages/audio_manager_page.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../chatbot/presentation/widgets/animated_chat_fab.dart';
+import '../../../notifications/presentation/bloc/notification_bloc.dart';
+import '../../../notifications/presentation/pages/notification_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../transcription/presentation/pages/transcript_list_screen.dart';
 import '../../domain/entities/recording.dart';
@@ -34,7 +36,7 @@ class _RecordingPageState extends State<RecordingPage> {
         const TranscriptListScreen(),
         AudioManagerPage(initialTab: _audioManagerTab),
         const _RecordingView(),
-        const _PlaceholderView(message: 'Uploading Screen Placeholder'),
+        const NotificationScreen(),
         const ProfileScreen(),
       ];
 
@@ -86,6 +88,9 @@ class _RecordingPageState extends State<RecordingPage> {
         ),
         BlocProvider<TaskMonitorBloc>(
           create: (context) => sl<TaskMonitorBloc>(),
+        ),
+        BlocProvider<NotificationBloc>(
+          create: (context) => sl<NotificationBloc>(),
         ),
       ],
       child: BlocListener<RecordingBloc, RecordingState>(
@@ -168,6 +173,8 @@ class _RecordingPageState extends State<RecordingPage> {
           builder: (context, state) {
             final isRecording = state is RecordingInProgress;
             final isPaused = state is RecordingPaused;
+            final unreadCount =
+                context.watch<NotificationBloc>().state.unreadCount;
 
             return Scaffold(
               backgroundColor: const Color(0xFF101822),
@@ -224,12 +231,46 @@ class _RecordingPageState extends State<RecordingPage> {
                       ),
                     ],
                   ),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(
+                        Icons.notifications,
+                        size: 30,
+                        color: Colors.white,
+                      ),
+                      if (unreadCount > 0)
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              unreadCount > 99 ? '99+' : '$unreadCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   const Icon(
-                    Icons.cloud_upload_outlined,
+                    Icons.person_outline,
                     size: 30,
                     color: Colors.white,
                   ),
-                  const Icon(Icons.person_outline, size: 30, color: Colors.white),
                 ],
                 color: const Color(0xFF282E39),
                 buttonBackgroundColor: const Color(0xFF282E39),
@@ -375,25 +416,6 @@ class _RecordingView extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PlaceholderView extends StatelessWidget {
-  const _PlaceholderView({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Text(
-          message,
-          style: TextStyle(fontSize: 16, color: Colors.grey[400]),
-          textAlign: TextAlign.center,
         ),
       ),
     );

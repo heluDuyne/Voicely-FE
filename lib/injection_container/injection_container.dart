@@ -67,6 +67,16 @@ import '../features/chatbot/data/datasources/chatbot_local_data_source.dart';
 import '../features/chatbot/data/datasources/chatbot_remote_data_source.dart';
 import '../features/chatbot/data/repositories/chatbot_repository_impl.dart';
 import '../features/chatbot/domain/repositories/chatbot_repository.dart';
+// Features - Notifications
+import '../features/notifications/data/datasources/notification_remote_data_source.dart';
+import '../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../features/notifications/domain/repositories/notification_repository.dart';
+import '../features/notifications/domain/usecases/get_notification_by_id.dart';
+import '../features/notifications/domain/usecases/get_notifications.dart';
+import '../features/notifications/domain/usecases/get_unread_count.dart';
+import '../features/notifications/domain/usecases/mark_all_notifications_as_read.dart';
+import '../features/notifications/domain/usecases/mark_notifications_as_read.dart';
+import '../features/notifications/presentation/bloc/notification_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -253,6 +263,39 @@ Future<void> init() async {
 
   sl.registerLazySingleton<ChatbotLocalDataSource>(
     () => ChatbotLocalDataSourceImpl(sharedPreferences: sl()),
+  );
+
+  //! Features - Notifications
+  // Bloc
+  sl.registerFactory(
+    () => NotificationBloc(
+      getNotifications: sl(),
+      getUnreadCount: sl(),
+      getNotificationById: sl(),
+      markNotificationsAsRead: sl(),
+      markAllNotificationsAsRead: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => GetNotifications(sl()));
+  sl.registerLazySingleton(() => GetUnreadCount(sl()));
+  sl.registerLazySingleton(() => GetNotificationById(sl()));
+  sl.registerLazySingleton(() => MarkNotificationsAsRead(sl()));
+  sl.registerLazySingleton(() => MarkAllNotificationsAsRead(sl()));
+
+  // Repository
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<NotificationRemoteDataSource>(
+    () => NotificationRemoteDataSourceImpl(dio: sl()),
   );
 
   //! Core

@@ -20,6 +20,10 @@ class AppConstants {
   static const String summarizeAsyncEndpoint =
       '/notes/summarize-transcript-async';
   static const String chatbotSessionsEndpoint = '/chatbot/sessions';
+  static const String notificationsEndpoint = '/notifications/';
+  static const String unreadCountEndpoint = '/notifications/unread-count';
+  static const String markReadEndpoint = '/notifications/mark-read';
+  static const String markAllReadEndpoint = '/notifications/mark-all-read';
 
   static String audioFileById(int id) => '/audio/files/$id';
   static String updateAudio(int id) => '/audio/$id';
@@ -31,6 +35,7 @@ class AppConstants {
   static String chatbotMessages(String sessionId) =>
       '/chatbot/sessions/$sessionId/messages';
   static String taskJobStatus(String jobId) => '/tasks/status/$jobId';
+  static String notificationById(int id) => '/notifications/$id';
 
   // Storage keys
   static const String accessTokenKey = 'access_token';
@@ -50,6 +55,11 @@ class AppConstants {
   // Task polling
   static const Duration taskPollingInterval = Duration(seconds: 3);
   static const int maxPollingRetries = 3;
+
+  // Notification settings
+  static const int notificationsPerPage = 20;
+  static const int maxNotificationsPerPage = 100;
+  static const int previewNotificationsLimit = 3;
 
   // App Info
   static const String appName = 'Voicely';

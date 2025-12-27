@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:equatable/equatable.dart';
 
 abstract class RecordingEvent extends Equatable {
@@ -36,6 +37,18 @@ class DurationUpdated extends RecordingEvent {
   List<Object?> get props => [duration];
 }
 
+class AutoStopRecordingTriggered extends RecordingEvent {
+  const AutoStopRecordingTriggered();
+}
+
+class UploadRecordingRequested extends RecordingEvent {
+  final File audioFile;
+
+  const UploadRecordingRequested(this.audioFile);
+
+  @override
+  List<Object?> get props => [audioFile];
+}
 
 
 

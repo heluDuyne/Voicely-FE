@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/recording.dart';
+import '../entities/upload_job.dart';
 
 abstract class RecordingRepository {
   /// Start recording audio
@@ -19,13 +20,15 @@ abstract class RecordingRepository {
   /// Import an audio file from device storage
   Future<Either<Failure, File>> importAudioFile();
 
+  /// Upload recording asynchronously and get job info
+  Future<Either<Failure, UploadJob>> uploadRecordingAsync(File audioFile);
+
   /// Get the current recording status
   RecordingStatus getRecordingStatus();
 
   /// Get the current recording duration stream
   Stream<Duration> get durationStream;
 }
-
 
 
 

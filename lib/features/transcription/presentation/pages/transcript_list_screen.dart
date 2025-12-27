@@ -46,9 +46,9 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
     super.dispose();
   }
 
-  void _onBackPressed() {
-    context.pop();
-  }
+  // void _onBackPressed() {
+  //   context.pop();
+  // }
 
   void _onNewFolderPressed() {
     context.push(AppRoutes.addFolder);
@@ -86,67 +86,41 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF101822),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              backgroundColor: const Color(0xFF101822),
+              elevation: 0,
+              centerTitle: true,
+              automaticallyImplyLeading: false,
+              floating: true,
+              snap: true,
+              pinned: false,
+              title: const Text(
+                'Past Transcripts',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SliverPadding(
               padding: EdgeInsets.symmetric(
                 horizontal: screenWidth > 600 ? screenWidth * 0.1 : 16.0,
-                vertical: 12,
               ),
-              child: Row(
-                children: [
-                  // Back button
-                  GestureDetector(
-                    onTap: _onBackPressed,
-                    child: const Icon(
-                      Icons.chevron_left,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
-                  // Title
-                  const Expanded(
-                    child: Text(
-                      'Past Transcripts',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  // Placeholder for symmetry
-                  const SizedBox(width: 32),
-                ],
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 8),
+                  _buildSearchBar(),
+                  const SizedBox(height: 24),
+                  _buildFoldersSection(),
+                  const SizedBox(height: 24),
+                  _buildRecentTranscriptsSection(),
+                  const SizedBox(height: 24),
+                ]),
               ),
             ),
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: screenWidth > 600 ? screenWidth * 0.1 : 16.0,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    // Search bar
-                    _buildSearchBar(),
-                    const SizedBox(height: 24),
-                    // Folders section
-                    _buildFoldersSection(),
-                    const SizedBox(height: 24),
-                    // Recent Transcripts section
-                    _buildRecentTranscriptsSection(),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ),
-            // Bottom user profile bar
-            _buildUserProfileBar(),
           ],
         ),
       ),
@@ -294,80 +268,80 @@ class _TranscriptListScreenState extends State<TranscriptListScreen> {
     );
   }
 
-  void _onProfilePressed() {
-    context.push(AppRoutes.profile);
-  }
+  // void _onProfilePressed() {
+  //   context.push(AppRoutes.profile);
+  // }
 
-  Widget _buildUserProfileBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF101822),
-        border: Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          // Avatar - tappable to go to profile
-          GestureDetector(
-            onTap: _onProfilePressed,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFE8D5B7),
-              ),
-              child: ClipOval(
-                child: Icon(Icons.person, color: Colors.brown[400], size: 32),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // User info - also tappable to go to profile
-          Expanded(
-            child: GestureDetector(
-              onTap: _onProfilePressed,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'John Doe',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    'Premium',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Logout button
-          GestureDetector(
-            onTap: _onLogoutPressed,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF282E39),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildUserProfileBar() {
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  //     decoration: BoxDecoration(
+  //       color: const Color(0xFF101822),
+  //       border: Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5)),
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         // Avatar - tappable to go to profile
+  //         GestureDetector(
+  //           onTap: _onProfilePressed,
+  //           child: Container(
+  //             width: 48,
+  //             height: 48,
+  //             decoration: const BoxDecoration(
+  //               shape: BoxShape.circle,
+  //               color: Color(0xFFE8D5B7),
+  //             ),
+  //             child: ClipOval(
+  //               child: Icon(Icons.person, color: Colors.brown[400], size: 32),
+  //             ),
+  //           ),
+  //         ),
+  //         const SizedBox(width: 12),
+  //         // User info - also tappable to go to profile
+  //         Expanded(
+  //           child: GestureDetector(
+  //             onTap: _onProfilePressed,
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 const Text(
+  //                   'John Doe',
+  //                   style: TextStyle(
+  //                     color: Colors.white,
+  //                     fontSize: 16,
+  //                     fontWeight: FontWeight.w600,
+  //                   ),
+  //                 ),
+  //                 Text(
+  //                   'Premium',
+  //                   style: TextStyle(color: Colors.grey[500], fontSize: 13),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //         // Logout button
+  //         GestureDetector(
+  //           onTap: _onLogoutPressed,
+  //           child: Container(
+  //             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //             decoration: BoxDecoration(
+  //               color: const Color(0xFF282E39),
+  //               borderRadius: BorderRadius.circular(8),
+  //             ),
+  //             child: const Text(
+  //               'Logout',
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontSize: 14,
+  //                 fontWeight: FontWeight.w500,
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

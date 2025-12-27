@@ -31,7 +31,8 @@ class NetworkClient {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           // Add auth token if available
-          if (authLocalDataSource != null) {
+          final skipAuth = options.extra['skipAuth'] == true;
+          if (!skipAuth && authLocalDataSource != null) {
             final token = await authLocalDataSource!.getAccessToken();
             if (token != null) {
               options.headers['Authorization'] = 'Bearer $token';
@@ -46,31 +47,49 @@ class NetworkClient {
           // Handle 401 errors by attempting token refresh
           if (error.response?.statusCode == 401 &&
               authLocalDataSource != null) {
+            final isRefreshRequest =
+                error.requestOptions.path == AppConstants.refreshTokenEndpoint;
+            if (isRefreshRequest) {
+              await authLocalDataSource!.clearCache();
+              return handler.next(error);
+            }
+
             final refreshToken = await authLocalDataSource!.getRefreshToken();
             if (refreshToken != null) {
               try {
                 // Attempt to refresh token
                 final response = await _dio.post(
-                  '/auth/refresh',
+                  AppConstants.refreshTokenEndpoint,
                   data: {'refresh_token': refreshToken},
                   options: Options(
-                    headers: {},
-                  ), // Remove auth header for refresh request
+                    extra: {'skipAuth': true},
+                  ),
                 );
 
-                if (response.statusCode == 200) {
-                  // Save new tokens
-                  final newAccessToken = response.data['access_token'];
-                  final newRefreshToken = response.data['refresh_token'];
+                final data = response.data;
+                if (response.statusCode == 200 &&
+                    data is Map<String, dynamic> &&
+                    data['success'] == true &&
+                    data['data'] is Map<String, dynamic>) {
+                  final tokenData = data['data'] as Map<String, dynamic>;
+                  final newAccessToken = tokenData['access_token'];
+                  final newRefreshToken = tokenData['refresh_token'];
 
-                  await authLocalDataSource!.setAccessToken(newAccessToken);
-                  await authLocalDataSource!.setRefreshToken(newRefreshToken);
+                  if (newAccessToken is String &&
+                      newRefreshToken is String) {
+                    // Save new tokens
+                    await authLocalDataSource!.saveTokens(
+                      accessToken: newAccessToken,
+                      refreshToken: newRefreshToken,
+                    );
 
-                  // Retry original request with new token
-                  error.requestOptions.headers['Authorization'] =
-                      'Bearer $newAccessToken';
-                  final retryResponse = await _dio.fetch(error.requestOptions);
-                  return handler.resolve(retryResponse);
+                    // Retry original request with new token
+                    error.requestOptions.headers['Authorization'] =
+                        'Bearer $newAccessToken';
+                    final retryResponse =
+                        await _dio.fetch(error.requestOptions);
+                    return handler.resolve(retryResponse);
+                  }
                 }
               } catch (e) {
                 // Token refresh failed, clear tokens

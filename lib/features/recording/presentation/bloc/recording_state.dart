@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/recording.dart';
+import '../../domain/entities/upload_job.dart';
 
 abstract class RecordingState extends Equatable {
   const RecordingState();
@@ -40,6 +41,36 @@ class RecordingCompleted extends RecordingState {
   List<Object?> get props => [recording];
 }
 
+class RecordingCompletedMaxDuration extends RecordingState {
+  final Recording recording;
+  final String message;
+
+  const RecordingCompletedMaxDuration({
+    required this.recording,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [recording, message];
+}
+
+class RecordingUploading extends RecordingState {
+  const RecordingUploading();
+}
+
+class RecordingUploadSuccess extends RecordingState {
+  final UploadJob uploadJob;
+  final String message;
+
+  const RecordingUploadSuccess({
+    required this.uploadJob,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [uploadJob, message];
+}
+
 class AudioImported extends RecordingState {
   final File audioFile;
 
@@ -57,7 +88,6 @@ class RecordingError extends RecordingState {
   @override
   List<Object?> get props => [message];
 }
-
 
 
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routes/app_router.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../domain/entities/user_profile.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/profile_menu_item.dart';
@@ -16,14 +18,6 @@ class ProfileScreen extends StatelessWidget {
     email: 'duypham@email.com',
     subscriptionType: SubscriptionType.premium,
   );
-
-  void _onBackPressed(BuildContext context) {
-    context.pop();
-  }
-
-  void _onDonePressed(BuildContext context) {
-    context.pop();
-  }
 
   void _onEditAvatarPressed(BuildContext context) {
     ScaffoldMessenger.of(
@@ -83,9 +77,9 @@ class ProfileScreen extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
-                  // Navigate to landing page and clear stack
-                  context.go(AppRoutes.landing);
+                  Navigator.pop(context); // Close dialog
+                  // Trigger logout event
+                  context.read<AuthBloc>().add(LogoutRequested());
                 },
                 child: const Text(
                   'Logout',
@@ -102,72 +96,63 @@ class ProfileScreen extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final user = _mockUser;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF101822),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: screenWidth > 600 ? screenWidth * 0.1 : 16.0,
-                vertical: 12,
-              ),
-              child: Row(
-                children: [
-                  // Back button
-                  GestureDetector(
-                    onTap: () => _onBackPressed(context),
-                    child: const Icon(
-                      Icons.chevron_left,
-                      color: Colors.white,
-                      size: 32,
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthUnauthenticated) {
+          // Navigate to landing page and clear stack
+          context.go(AppRoutes.landing);
+        } else if (state is AuthError) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF101822),
+        body: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                backgroundColor: const Color(0xFF101822),
+                elevation: 0,
+                centerTitle: true,
+                automaticallyImplyLeading: false,
+                floating: true,
+                snap: true,
+                pinned: false,
+                title: const Text(
+                  'Profile',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    onPressed: () => _onLogoutPressed(context),
+                    icon: const Icon(
+                      Icons.logout,
+                      color: Color(0xFFEF4444),
+                      size: 24,
                     ),
                   ),
-                  // Title
-                  const Expanded(
-                    child: Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  // Done button
-                  GestureDetector(
-                    onTap: () => _onDonePressed(context),
-                    child: const Text(
-                      'Done',
-                      style: TextStyle(
-                        color: Color(0xFF3B82F6),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+                  const SizedBox(width: 8),
                 ],
               ),
-            ),
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
+              SliverPadding(
                 padding: EdgeInsets.symmetric(
                   horizontal: screenWidth > 600 ? screenWidth * 0.1 : 24.0,
                 ),
-                child: Column(
-                  children: [
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
                     const SizedBox(height: 24),
-                    // Avatar
                     ProfileAvatar(
                       imageUrl: user.avatarUrl,
                       size: 120,
                       onEditTap: () => _onEditAvatarPressed(context),
                     ),
                     const SizedBox(height: 16),
-                    // Name
                     Text(
                       user.name,
                       style: const TextStyle(
@@ -177,13 +162,11 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Subscription badge
                     SubscriptionBadge(
                       label: user.subscriptionLabel,
                       isPremium: user.isPremium,
                     ),
                     const SizedBox(height: 32),
-                    // Account Settings section
                     ProfileMenuSection(
                       title: 'Account Settings',
                       items: [
@@ -200,7 +183,6 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // App Preferences section
                     ProfileMenuSection(
                       title: 'App Preferences',
                       items: [
@@ -222,37 +204,11 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 32),
-                  ],
+                  ]),
                 ),
               ),
-            ),
-            // Logout button
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: screenWidth > 600 ? screenWidth * 0.1 : 24.0,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () => _onLogoutPressed(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B2635),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Logout',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -8,6 +8,8 @@ import '../bloc/task_monitor_event.dart';
 import '../tabs/pending_tab.dart';
 import '../tabs/tasks_tab.dart';
 import '../tabs/upload_tab.dart';
+import '../../../chatbot/presentation/pages/chatbot_screen.dart';
+import '../../../chatbot/presentation/widgets/animated_chat_fab.dart';
 
 class AudioManagerPage extends StatefulWidget {
   final String? initialTab;
@@ -87,6 +89,18 @@ class _AudioManagerPageState extends State<AudioManagerPage>
       _isMonitoring = false;
       context.read<TaskMonitorBloc>().add(const StopTaskMonitoring());
     }
+  }
+
+  void _openChatbot() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (context) => const ChatbotScreen(),
+    );
   }
 
   @override

@@ -7,6 +7,8 @@ import '../../../audio_manager/presentation/bloc/audio_manager_bloc.dart';
 import '../../../audio_manager/presentation/bloc/audio_manager_event.dart';
 import '../../../audio_manager/presentation/bloc/task_monitor_bloc.dart';
 import '../../../audio_manager/presentation/pages/audio_manager_page.dart';
+import '../../../chatbot/presentation/pages/chatbot_screen.dart';
+import '../../../chatbot/presentation/widgets/animated_chat_fab.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../transcription/presentation/pages/transcript_list_screen.dart';
 import '../../domain/entities/recording.dart';
@@ -58,6 +60,18 @@ class _RecordingPageState extends State<RecordingPage> {
         _audioManagerTab = null;
       }
     });
+  }
+
+  void _openChatbot() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (context) => const ChatbotScreen(),
+    );
   }
 
   @override
@@ -158,6 +172,7 @@ class _RecordingPageState extends State<RecordingPage> {
             return Scaffold(
               backgroundColor: const Color(0xFF101822),
               body: IndexedStack(index: _page, children: _pages),
+              floatingActionButton: AnimatedChatFab(onPressed: _openChatbot),
               bottomNavigationBar: CurvedNavigationBar(
                 key: _bottomNavigationKey,
                 index: _page,

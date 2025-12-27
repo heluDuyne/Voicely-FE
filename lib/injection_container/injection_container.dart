@@ -62,6 +62,11 @@ import '../features/summary/domain/usecases/save_summary.dart';
 import '../features/summary/domain/usecases/resummarize.dart';
 import '../features/summary/domain/usecases/update_action_item.dart';
 import '../features/summary/presentation/bloc/summary_bloc.dart';
+// Features - Chatbot
+import '../features/chatbot/data/datasources/chatbot_local_data_source.dart';
+import '../features/chatbot/data/datasources/chatbot_remote_data_source.dart';
+import '../features/chatbot/data/repositories/chatbot_repository_impl.dart';
+import '../features/chatbot/domain/repositories/chatbot_repository.dart';
 
 final sl = GetIt.instance;
 
@@ -230,6 +235,24 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<SummaryLocalDataSource>(
     () => SummaryLocalDataSourceImpl(sharedPreferences: sl()),
+  );
+
+  //! Features - Chatbot
+  sl.registerLazySingleton<ChatbotRepository>(
+    () => ChatbotRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<ChatbotRemoteDataSource>(
+    () => ChatbotRemoteDataSourceImpl(dio: sl()),
+  );
+
+  sl.registerLazySingleton<ChatbotLocalDataSource>(
+    () => ChatbotLocalDataSourceImpl(sharedPreferences: sl()),
   );
 
   //! Core

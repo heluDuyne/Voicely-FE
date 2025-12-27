@@ -7,6 +7,8 @@ import '../../../auth/data/datasources/auth_local_data_source.dart';
 import '../../domain/entities/audio_file_page.dart';
 import '../../domain/entities/audio_filter.dart';
 import '../../domain/entities/audio_upload_result.dart';
+import '../../domain/entities/audio_file.dart';
+import '../../domain/entities/note.dart';
 import '../../domain/entities/pending_task_bucket.dart';
 import '../../domain/entities/server_task_bucket.dart';
 import '../../domain/entities/task.dart';
@@ -71,6 +73,29 @@ class AudioManagerRepositoryImpl implements AudioManagerRepository {
   }
 
   @override
+  Future<Either<Failure, AudioFile>> getAudioFileById(int audioId) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(
+        UnauthorizedFailure('Please login to view audio details'),
+      );
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final audioFile = await remoteDataSource.getAudioFileById(audioId);
+      return Right(audioFile);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
   Future<Either<Failure, AudioUploadResult>> uploadAudioFile(
     File audioFile,
   ) async {
@@ -91,6 +116,244 @@ class AudioManagerRepositoryImpl implements AudioManagerRepository {
     }
 
     return const Left(NetworkFailure('No internet connection'));
+  }
+
+  @override
+  Future<Either<Failure, AudioFile>> renameAudio(
+    int audioId,
+    String newName,
+  ) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(
+        UnauthorizedFailure('Please login to rename audio'),
+      );
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final updatedAudio = await remoteDataSource.renameAudio(audioId, newName);
+      return Right(updatedAudio);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> deleteAudio(int audioId) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(
+        UnauthorizedFailure('Please login to delete audio'),
+      );
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      await remoteDataSource.deleteAudio(audioId);
+      return const Right(true);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> downloadAudio(
+    int audioId,
+    String filename,
+  ) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(
+        UnauthorizedFailure('Please login to download audio'),
+      );
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final filePath =
+          await remoteDataSource.downloadAudio(audioId, filename);
+      return Right(filePath);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Task>>> getActiveTasks(int audioId) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(UnauthorizedFailure('Please login to view tasks'));
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final tasks = await remoteDataSource.getActiveTasks(audioId);
+      return Right(tasks);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AudioFile>> updateTranscription(
+    int audioId,
+    String transcription,
+  ) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(
+        UnauthorizedFailure('Please login to update transcription'),
+      );
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final updatedAudio = await remoteDataSource.updateTranscription(
+        audioId,
+        transcription,
+      );
+      return Right(updatedAudio);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> startTranscription(int audioId) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(
+        UnauthorizedFailure('Please login to start transcription'),
+      );
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      await remoteDataSource.startTranscription(audioId);
+      return const Right(true);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Note?>> getSummaryNote(int audioFileId) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(UnauthorizedFailure('Please login to view summary'));
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final note = await remoteDataSource.getSummaryNote(audioFileId);
+      return Right(note);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Note>> getNoteById(int noteId) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(UnauthorizedFailure('Please login to view note'));
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final note = await remoteDataSource.getNoteById(noteId);
+      return Right(note);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> startSummarization(int audioFileId) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(
+        UnauthorizedFailure('Please login to start summarization'),
+      );
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      await remoteDataSource.startSummarization(audioFileId);
+      return const Right(true);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Note>> updateNoteSummary(
+    int noteId,
+    String summary,
+  ) async {
+    final token = await authLocalDataSource.getAccessToken();
+    if (token == null) {
+      return const Left(UnauthorizedFailure('Please login to update summary'));
+    }
+
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      final note = await remoteDataSource.updateNoteSummary(noteId, summary);
+      return Right(note);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
   }
 
   @override

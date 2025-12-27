@@ -4,14 +4,20 @@ import '../../domain/entities/audio_file.dart';
 class TranscriptionTab extends StatefulWidget {
   final AudioFile audioFile;
   final bool hasTranscript;
+  final bool isTranscribing;
   final VoidCallback onChanged;
   final VoidCallback? onSaved;
+  final Future<String?> Function(String transcription) onSaveTranscription;
+  final Future<String?> Function() onStartTranscription;
 
   const TranscriptionTab({
     super.key,
     required this.audioFile,
     required this.hasTranscript,
+    required this.isTranscribing,
     required this.onChanged,
+    required this.onSaveTranscription,
+    required this.onStartTranscription,
     this.onSaved,
   });
 
@@ -32,6 +38,24 @@ class _TranscriptionTabState extends State<TranscriptionTab> {
   }
 
   @override
+  void didUpdateWidget(TranscriptionTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newText = widget.audioFile.transcription ?? '';
+    if (newText == _initialText) {
+      return;
+    }
+    if (_controller.text != _initialText) {
+      return;
+    }
+    _initialText = newText;
+    _controller.value = _controller.value.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+      composing: TextRange.empty,
+    );
+  }
+
+  @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
@@ -47,6 +71,10 @@ class _TranscriptionTabState extends State<TranscriptionTab> {
   @override
   Widget build(BuildContext context) {
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
+    if (widget.isTranscribing) {
+      return _buildTranscribingView();
+    }
 
     if (!widget.hasTranscript) {
       return _buildNoTranscriptView();
@@ -153,17 +181,61 @@ class _TranscriptionTabState extends State<TranscriptionTab> {
     );
   }
 
-  void _handleTranscribe() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Transcription started...')),
+  Widget _buildTranscribingView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 24),
+          const Text(
+            'Transcribing Audio...',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Please wait while we transcribe your audio.',
+            style: TextStyle(color: Colors.grey[500]),
+          ),
+        ],
+      ),
     );
   }
 
-  void _handleSave() {
-    _initialText = _controller.text;
-    widget.onSaved?.call();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Transcript saved successfully')),
-    );
+  Future<void> _handleTranscribe() async {
+    final errorMessage = await widget.onStartTranscription();
+    if (!mounted) {
+      return;
+    }
+
+    if (errorMessage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transcription started. Please wait...')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start transcription: $errorMessage')),
+      );
+    }
+  }
+
+  Future<void> _handleSave() async {
+    final transcription = _controller.text;
+    final errorMessage = await widget.onSaveTranscription(transcription);
+    if (!mounted) {
+      return;
+    }
+
+    if (errorMessage == null) {
+      _initialText = transcription;
+      widget.onSaved?.call();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transcription saved successfully')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save transcription: $errorMessage')),
+      );
+    }
   }
 }

@@ -28,6 +28,12 @@ class Task extends Equatable {
   bool get isActive =>
       status == 'pending' || status == 'queued' || status == 'processing';
 
+  bool get isTranscribing =>
+      taskType.toLowerCase() == 'transcribe' && isActive;
+
+  bool get isSummarizing =>
+      taskType.toLowerCase() == 'summarize' && isActive;
+
   bool get isCompleted => status == 'completed';
 
   bool get isFailed => status == 'failed';

@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../models/audio_filter_model.dart';
+import '../models/audio_file_model.dart';
 import '../models/audio_file_page_model.dart';
 import '../models/audio_upload_result_model.dart';
+import '../models/note_model.dart';
 import '../models/pending_task_model.dart';
 import '../models/server_task_model.dart';
 import '../models/task_model.dart';
@@ -15,7 +18,21 @@ import '../../domain/entities/task_search_criteria.dart';
 
 abstract class AudioManagerRemoteDataSource {
   Future<AudioFilePageModel> getAudioFiles(AudioFilterModel filter);
+  Future<AudioFileModel> getAudioFileById(int audioId);
   Future<AudioUploadResultModel> uploadAudioFile(File audioFile);
+  Future<AudioFileModel> renameAudio(int audioId, String newName);
+  Future<void> deleteAudio(int audioId);
+  Future<String> downloadAudio(int audioId, String filename);
+  Future<List<TaskModel>> getActiveTasks(int audioId);
+  Future<AudioFileModel> updateTranscription(
+    int audioId,
+    String transcription,
+  );
+  Future<void> startTranscription(int audioId);
+  Future<NoteModel?> getSummaryNote(int audioFileId);
+  Future<NoteModel> getNoteById(int noteId);
+  Future<void> startSummarization(int audioFileId);
+  Future<NoteModel> updateNoteSummary(int noteId, String summary);
   Future<ServerTaskBucket> getServerTasks();
   Future<PendingTaskBucket> getPendingTasks();
   Future<List<TaskModel>> searchTasks(TaskSearchCriteria criteria);
@@ -60,6 +77,25 @@ class AudioManagerRemoteDataSourceImpl implements AudioManagerRemoteDataSource {
   }
 
   @override
+  Future<AudioFileModel> getAudioFileById(int audioId) async {
+    try {
+      final response = await dio.get(AppConstants.audioFileById(audioId));
+
+      final data = _extractData(
+        response,
+        fallbackMessage: 'Failed to load audio details',
+      );
+
+      return AudioFileModel.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleDioException(
+        e,
+        fallbackMessage: 'Failed to load audio details',
+      );
+    }
+  }
+
+  @override
   Future<AudioUploadResultModel> uploadAudioFile(File audioFile) async {
     try {
       final formData = FormData.fromMap({
@@ -82,6 +118,234 @@ class AudioManagerRemoteDataSourceImpl implements AudioManagerRemoteDataSource {
       return AudioUploadResultModel.fromJson(data);
     } on DioException catch (e) {
       throw _handleDioException(e, fallbackMessage: 'Failed to upload audio');
+    }
+  }
+
+  @override
+  Future<AudioFileModel> renameAudio(int audioId, String newName) async {
+    try {
+      final response = await dio.put(
+        AppConstants.updateAudio(audioId),
+        data: {'original_filename': newName},
+      );
+
+      final data = _extractData(
+        response,
+        fallbackMessage: 'Failed to rename audio',
+      );
+
+      return AudioFileModel.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Failed to rename audio');
+    }
+  }
+
+  @override
+  Future<void> deleteAudio(int audioId) async {
+    try {
+      final response = await dio.delete(AppConstants.deleteAudio(audioId));
+
+      _extractData(
+        response,
+        fallbackMessage: 'Failed to delete audio',
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Failed to delete audio');
+    }
+  }
+
+  @override
+  Future<String> downloadAudio(int audioId, String filename) async {
+    try {
+      final response = await dio.get(
+        AppConstants.downloadAudio(audioId),
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final directory = await getApplicationDocumentsDirectory();
+      final normalizedName =
+          filename.trim().isEmpty ? 'audio.mp3' : filename.trim();
+      final filePath = '${directory.path}/$normalizedName';
+      final file = File(filePath);
+      await file.writeAsBytes(response.data as List<int>);
+
+      return filePath;
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        final message = data['message']?.toString() ?? 'File not found';
+        throw ServerException(
+          message,
+          code: data['code'] is int
+              ? data['code'] as int
+              : e.response?.statusCode ?? 500,
+        );
+      }
+      throw _handleDioException(e, fallbackMessage: 'Failed to download audio');
+    }
+  }
+
+  @override
+  Future<List<TaskModel>> getActiveTasks(int audioId) async {
+    try {
+      final response = await dio.post(
+        AppConstants.searchTasksEndpoint,
+        data: {
+          'active_only': true,
+          'audio_id': audioId,
+          'order': 'DESC',
+          'page': 1,
+          'page_size': 10,
+        },
+      );
+
+      final data = _extractData(
+        response,
+        fallbackMessage: 'Failed to load tasks',
+      );
+
+      final taskItems = data['data'];
+      if (taskItems is! List) {
+        throw const ServerException('Invalid response data');
+      }
+
+      return taskItems
+          .map(
+            (item) => TaskModel.fromJson(item as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Failed to load tasks');
+    }
+  }
+
+  @override
+  Future<AudioFileModel> updateTranscription(
+    int audioId,
+    String transcription,
+  ) async {
+    try {
+      final response = await dio.put(
+        AppConstants.updateAudio(audioId),
+        data: {'transcription': transcription},
+      );
+
+      final data = _extractData(
+        response,
+        fallbackMessage: 'Failed to update transcription',
+      );
+
+      return AudioFileModel.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleDioException(
+        e,
+        fallbackMessage: 'Failed to update transcription',
+      );
+    }
+  }
+
+  @override
+  Future<void> startTranscription(int audioId) async {
+    try {
+      final response = await dio.post(
+        AppConstants.transcribeAsyncEndpoint,
+        data: {'audio_id': audioId, 'language_code': 'vi-VN'},
+      );
+
+      _extractData(
+        response,
+        fallbackMessage: 'Failed to start transcription',
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(
+        e,
+        fallbackMessage: 'Failed to start transcription',
+      );
+    }
+  }
+
+  @override
+  Future<NoteModel?> getSummaryNote(int audioFileId) async {
+    try {
+      final response = await dio.post(
+        AppConstants.searchNotesEndpoint,
+        data: {'audio_file_id': audioFileId, 'page': 1, 'page_size': 1},
+      );
+
+      final data = _extractData(
+        response,
+        fallbackMessage: 'Failed to load summary',
+      );
+
+      final notes = data['data'];
+      if (notes is! List) {
+        throw const ServerException('Invalid response data');
+      }
+      if (notes.isEmpty) {
+        return null;
+      }
+      return NoteModel.fromJson(notes.first as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Failed to load summary');
+    }
+  }
+
+  @override
+  Future<NoteModel> getNoteById(int noteId) async {
+    try {
+      final response = await dio.get(AppConstants.updateNote(noteId));
+
+      final data = _extractData(
+        response,
+        fallbackMessage: 'Failed to load note',
+      );
+
+      if (data is Map<String, dynamic>) {
+        return NoteModel.fromJson(data);
+      }
+
+      throw const ServerException('Invalid response data');
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Failed to load note');
+    }
+  }
+
+  @override
+  Future<void> startSummarization(int audioFileId) async {
+    try {
+      final response = await dio.post(
+        AppConstants.summarizeAsyncEndpoint,
+        data: {'audio_file_id': audioFileId},
+      );
+
+      _extractData(
+        response,
+        fallbackMessage: 'Failed to start summarization',
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(
+        e,
+        fallbackMessage: 'Failed to start summarization',
+      );
+    }
+  }
+
+  @override
+  Future<NoteModel> updateNoteSummary(int noteId, String summary) async {
+    try {
+      final response = await dio.put(
+        AppConstants.updateNote(noteId),
+        data: {'summary': summary},
+      );
+
+      final data = _extractData(
+        response,
+        fallbackMessage: 'Failed to update summary',
+      );
+
+      return NoteModel.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleDioException(e, fallbackMessage: 'Failed to update summary');
     }
   }
 

@@ -15,12 +15,29 @@ class AppConstants {
   static const String activeTasksEndpoint = '/tasks/active';
   static const String searchTasksEndpoint = '/tasks/search';
   static const String pendingTasksEndpoint = '/tasks/pending';
+  static const String transcribeAsyncEndpoint = '/transcript/transcribe-async';
+  static const String searchNotesEndpoint = '/notes/search';
+  static const String summarizeAsyncEndpoint =
+      '/notes/summarize-transcript-async';
+  static const String chatbotSessionsEndpoint = '/chatbot/sessions';
+
+  static String audioFileById(int id) => '/audio/files/$id';
+  static String updateAudio(int id) => '/audio/$id';
+  static String deleteAudio(int id) => '/audio/files/$id';
+  static String downloadAudio(int id) => '/audio/files/$id/download';
+  static String updateNote(int id) => '/notes/$id';
+  static String chatbotMessagesAsync(String sessionId) =>
+      '/chatbot/sessions/$sessionId/messages-async';
+  static String chatbotMessages(String sessionId) =>
+      '/chatbot/sessions/$sessionId/messages';
+  static String taskJobStatus(String jobId) => '/tasks/status/$jobId';
 
   // Storage keys
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
   static const String userDataKey = 'user_data';
   static const String isFirstTimeKey = 'is_first_time';
+  static const String chatSessionIdKey = 'chat_session_id';
 
   // Timeouts
   static const int connectionTimeout = 30000; // 30 seconds

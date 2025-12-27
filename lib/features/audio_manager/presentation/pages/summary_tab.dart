@@ -1,21 +1,29 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import '../../domain/entities/audio_file.dart';
 
 class SummaryTab extends StatefulWidget {
-  final AudioFile audioFile;
+  final int? noteId;
+  final String? summaryHtml;
   final bool hasSummary;
   final bool enabled;
+  final bool isSummarizing;
   final VoidCallback onChanged;
   final VoidCallback? onSaved;
+  final Future<String?> Function() onStartSummarization;
+  final Future<String?> Function(String summary)? onSaveSummary;
 
   const SummaryTab({
     super.key,
-    required this.audioFile,
+    this.noteId,
+    required this.summaryHtml,
     required this.hasSummary,
     required this.enabled,
+    required this.isSummarizing,
     required this.onChanged,
+    required this.onStartSummarization,
     this.onSaved,
+    this.onSaveSummary,
   });
 
   @override
@@ -29,7 +37,20 @@ class _SummaryTabState extends State<SummaryTab> {
   @override
   void initState() {
     super.initState();
-    _initializeController();
+    _initializeController(widget.summaryHtml ?? '');
+  }
+
+  @override
+  void didUpdateWidget(SummaryTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newSummary = widget.summaryHtml ?? '';
+    if (oldWidget.summaryHtml == newSummary) {
+      return;
+    }
+    if (_getDocumentContent() != _initialContent) {
+      return;
+    }
+    _resetController(newSummary);
   }
 
   @override
@@ -39,23 +60,57 @@ class _SummaryTabState extends State<SummaryTab> {
     super.dispose();
   }
 
-  void _initializeController() {
-    final summaryText = widget.audioFile.summary ?? '';
-    if (widget.hasSummary && summaryText.trim().isNotEmpty) {
-      final doc = quill.Document()..insert(0, summaryText);
-      _controller = quill.QuillController(
-        document: doc,
-        selection: const TextSelection.collapsed(offset: 0),
-      );
-    } else {
-      _controller = quill.QuillController.basic();
-    }
+  void _initializeController(String summaryText) {
+    _controller = _buildController(summaryText);
     _initialContent = _getDocumentContent();
     _controller.addListener(_onContentChanged);
   }
 
+  void _resetController(String summaryText) {
+    _controller.removeListener(_onContentChanged);
+    _controller.dispose();
+    _controller = _buildController(summaryText);
+    _initialContent = _getDocumentContent();
+    _controller.addListener(_onContentChanged);
+  }
+
+  quill.QuillController _buildController(String summaryText) {
+    if (summaryText.trim().isEmpty) {
+      return quill.QuillController.basic();
+    }
+    
+    try {
+      // Try to parse as JSON delta first
+      dynamic jsonData = jsonDecode(summaryText);
+
+      // Handle double-encoded JSON (string within string)
+      if (jsonData is String) {
+        jsonData = jsonDecode(jsonData);
+      }
+      
+      final doc = quill.Document.fromJson(jsonData);
+      return quill.QuillController(
+        document: doc,
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+    } catch (e) {
+      print('Error parsing summary JSON: $e');
+      print('Summary text: $summaryText');
+      // If parsing fails, treat as plain text
+      final doc = quill.Document()..insert(0, summaryText);
+      return quill.QuillController(
+        document: doc,
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+    }
+  }
+
   String _getDocumentContent() {
     return _controller.document.toPlainText().trim();
+  }
+
+  String _getDocumentJson() {
+    return jsonEncode(_controller.document.toDelta().toJson());
   }
 
   void _onContentChanged() {
@@ -67,6 +122,10 @@ class _SummaryTabState extends State<SummaryTab> {
   @override
   Widget build(BuildContext context) {
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
+    if (widget.isSummarizing) {
+      return _buildSummarizingView();
+    }
 
     if (!widget.enabled) {
       return _buildDisabledView();
@@ -106,8 +165,7 @@ class _SummaryTabState extends State<SummaryTab> {
               child: quill.QuillEditor.basic(
                 configurations: quill.QuillEditorConfigurations(
                   controller: _controller,
-                  sharedConfigurations:
-                      const quill.QuillSharedConfigurations(),
+                  sharedConfigurations: const quill.QuillSharedConfigurations(),
                   placeholder: 'Summary content...',
                 ),
               ),
@@ -227,17 +285,69 @@ class _SummaryTabState extends State<SummaryTab> {
     );
   }
 
-  void _handleGenerateSummary() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Generating summary...')),
+  Widget _buildSummarizingView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 24),
+          const Text(
+            'Generating Summary...',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Please wait while we generate a summary.',
+            style: TextStyle(color: Colors.grey[500]),
+          ),
+        ],
+      ),
     );
   }
 
-  void _handleSave() {
-    _initialContent = _getDocumentContent();
-    widget.onSaved?.call();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Summary saved successfully')),
-    );
+  Future<void> _handleGenerateSummary() async {
+    final errorMessage = await widget.onStartSummarization();
+    if (!mounted) {
+      return;
+    }
+
+    if (errorMessage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Summarization started. Please wait...')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start summary: $errorMessage')),
+      );
+    }
+  }
+
+  Future<void> _handleSave() async {
+    if (widget.onSaveSummary == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Save function not available')),
+      );
+      return;
+    }
+
+    final summaryJson = _getDocumentJson();
+    final errorMessage = await widget.onSaveSummary!(summaryJson);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (errorMessage == null) {
+      _initialContent = _getDocumentContent();
+      widget.onSaved?.call();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Summary saved successfully')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save summary: $errorMessage')),
+      );
+    }
   }
 }

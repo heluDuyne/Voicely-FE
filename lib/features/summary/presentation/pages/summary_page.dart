@@ -11,11 +11,7 @@ class SummaryPage extends StatelessWidget {
   final String? meetingTitle;
   final String? transcriptionId;
 
-  const SummaryPage({
-    super.key,
-    this.meetingTitle,
-    this.transcriptionId,
-  });
+  const SummaryPage({super.key, this.meetingTitle, this.transcriptionId});
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +24,7 @@ class SummaryPage extends StatelessWidget {
       listener: (context, state) {
         if (state is SummaryError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         } else if (state is SummarySaved) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -48,9 +41,7 @@ class SummaryPage extends StatelessWidget {
             return Scaffold(
               backgroundColor: const Color(0xFF101822),
               body: const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF3B82F6),
-                ),
+                child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
               ),
             );
           }
@@ -164,10 +155,12 @@ class SummaryPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          meetingTitle ?? summary.meetingTitle ?? 'Meeting Summary',
-                          style: TextStyle(
+                          meetingTitle ??
+                              summary.meetingTitle ??
+                              'Meeting Summary',
+                          style: const TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[400],
+                            color: Colors.white,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -204,25 +197,25 @@ class SummaryPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Executive Summary
+                    // Overview
                     _buildSectionCard(
                       icon: const Icon(
                         Icons.auto_awesome,
                         color: Color(0xFF60A5FA),
                         size: 20,
                       ),
-                      title: 'EXECUTIVE SUMMARY',
+                      title: 'Overview',
                       iconColor: const Color(0xFF60A5FA),
                       content: _buildExecutiveSummary(summary.executiveSummary),
                     ),
-                    // Key Takeaways
+                    // Key Points
                     _buildSectionCard(
                       icon: const Icon(
                         Icons.lightbulb_outline,
                         color: Color(0xFF10B981),
                         size: 20,
                       ),
-                      title: 'Key Takeaways',
+                      title: 'Key Points',
                       iconColor: const Color(0xFF10B981),
                       content: _buildKeyTakeaways(summary.keyTakeaways),
                     ),
@@ -271,9 +264,9 @@ class SummaryPage extends StatelessWidget {
                             Icon(Icons.refresh, color: Colors.white, size: 20),
                             SizedBox(width: 8),
                             Text(
-                              'Re-summarize',
+                              'Re-summary',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
                               ),
@@ -284,9 +277,8 @@ class SummaryPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Save Summary button
+                  // Save button
                   Expanded(
-                    flex: 2,
                     child: GestureDetector(
                       onTap: () => _onSaveSummaryPressed(context, summary),
                       child: Container(
@@ -299,15 +291,51 @@ class SummaryPage extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Save Summary',
+                              'Save',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
                               ),
                             ),
                             SizedBox(width: 8),
                             Icon(Icons.save, color: Colors.white, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Export button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        // TODO: Implement export functionality
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Export functionality coming soon'),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF282E39),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.download, color: Colors.white, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Export',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -334,7 +362,9 @@ class SummaryPage extends StatelessWidget {
       context.read<SummaryBloc>().add(ResummarizeEvent(transcriptionId!));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot resummarize: No transcription ID')),
+        const SnackBar(
+          content: Text('Cannot resummarize: No transcription ID'),
+        ),
       );
     }
   }
@@ -350,12 +380,12 @@ class SummaryPage extends StatelessWidget {
     bool currentStatus,
   ) {
     context.read<SummaryBloc>().add(
-          UpdateActionItemEvent(
-            summaryId: summaryId,
-            actionItemId: actionItemId,
-            isCompleted: !currentStatus,
-          ),
-        );
+      UpdateActionItemEvent(
+        summaryId: summaryId,
+        actionItemId: actionItemId,
+        isCompleted: !currentStatus,
+      ),
+    );
   }
 
   Widget _buildSectionCard({
@@ -420,35 +450,36 @@ class SummaryPage extends StatelessWidget {
   Widget _buildKeyTakeaways(List<String> keyTakeaways) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: keyTakeaways.map((takeaway) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 6, right: 12),
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.grey[500],
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  takeaway,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.white,
-                    height: 1.6,
+      children:
+          keyTakeaways.map((takeaway) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 6, right: 12),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[500],
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: Text(
+                      takeaway,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Colors.white,
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
     );
   }
 
@@ -464,170 +495,177 @@ class SummaryPage extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: actionItems.map((item) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1F2329),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => _onActionItemToggled(
-                      context,
-                      summaryId,
-                      item.id,
-                      item.isCompleted,
-                    ),
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: item.isCompleted
-                          ? const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 16,
-                            )
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      item.text,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.white,
-                        decoration: item.isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                  ),
-                ],
+      children:
+          actionItems.map((item) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1F2329),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(height: 12),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: Color(item.assignedToColorValue),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        item.assignedToInitials,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap:
+                            () => _onActionItemToggled(
+                              context,
+                              summaryId,
+                              item.id,
+                              item.isCompleted,
+                            ),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white, width: 2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child:
+                              item.isCompleted
+                                  ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 16,
+                                  )
+                                  : null,
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          item.text,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.white,
+                            decoration:
+                                item.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    item.assignedToName,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Color(item.assignedToColorValue),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            item.assignedToInitials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item.assignedToName,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
     );
   }
 
   Widget _buildActionItemsReadOnly(List<ActionItem> actionItems) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: actionItems.map((item) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1F2329),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: item.isCompleted
-                        ? const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 16,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      item.text,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.white,
-                        decoration: item.isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                  ),
-                ],
+      children:
+          actionItems.map((item) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1F2329),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(height: 12),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: Color(item.assignedToColorValue),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        item.assignedToInitials,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                  Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white, width: 2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child:
+                            item.isCompleted
+                                ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 16,
+                                )
+                                : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          item.text,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.white,
+                            decoration:
+                                item.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    item.assignedToName,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Color(item.assignedToColorValue),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            item.assignedToInitials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item.assignedToName,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
     );
   }
 
@@ -635,20 +673,20 @@ class SummaryPage extends StatelessWidget {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: tags.map((tag) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFF282E39),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '#$tag',
-            style: TextStyle(fontSize: 13, color: Colors.grey[300]),
-          ),
-        );
-      }).toList(),
+      children:
+          tags.map((tag) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF282E39),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '#$tag',
+                style: TextStyle(fontSize: 13, color: Colors.grey[300]),
+              ),
+            );
+          }).toList(),
     );
   }
 }
-

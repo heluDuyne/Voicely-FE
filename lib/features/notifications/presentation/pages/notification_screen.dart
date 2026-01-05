@@ -36,7 +36,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF101822),
         elevation: 0,
-        title: const Text('Notifications'),
+        title: const Text(
+          'Notifications',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: BlocBuilder<NotificationBloc, NotificationState>(
         builder: (context, state) {
@@ -120,10 +123,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
               ),
               if (showSeeAll)
-                TextButton(
-                  onPressed: onSeeAll,
-                  child: const Text('See All'),
-                ),
+                TextButton(onPressed: onSeeAll, child: const Text('See All')),
             ],
           ),
           const SizedBox(height: 8),
@@ -133,10 +133,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               child: Center(
                 child: Text(
                   emptyMessage,
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
                 ),
               ),
             )
@@ -195,9 +192,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NotificationDetailScreen(
-          notification: notification,
-        ),
+        builder:
+            (context) => NotificationDetailScreen(notification: notification),
       ),
     );
   }

@@ -86,9 +86,7 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
           return;
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please transcribe the audio first'),
-          ),
+          const SnackBar(content: Text('Please transcribe the audio first')),
         );
       });
     }
@@ -131,7 +129,8 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
       return;
     }
 
-    final shouldLoad = audioFile.isSummarize == true ||
+    final shouldLoad =
+        audioFile.isSummarize == true ||
         audioFile.hasSummary == true ||
         audioFile.summary != null;
     if (!shouldLoad) {
@@ -148,14 +147,11 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
       return;
     }
 
-    result.fold(
-      (_) {},
-      (note) {
-        setState(() {
-          _summaryNote = note;
-        });
-      },
-    );
+    result.fold((_) {}, (note) {
+      setState(() {
+        _summaryNote = note;
+      });
+    });
   }
 
   void _startTaskPolling() {
@@ -178,41 +174,36 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
       return;
     }
 
-    result.fold(
-      (_) {},
-      (tasks) {
-        final hasActiveTasks = tasks.any((task) => task.isActive);
-        final hasTranscribeActive =
-            tasks.any((task) => task.isTranscribing);
-        final hasSummarizeActive =
-            tasks.any((task) => task.isSummarizing);
+    result.fold((_) {}, (tasks) {
+      final hasActiveTasks = tasks.any((task) => task.isActive);
+      final hasTranscribeActive = tasks.any((task) => task.isTranscribing);
+      final hasSummarizeActive = tasks.any((task) => task.isSummarizing);
 
-        setState(() {
-          _activeTasks = tasks;
-          if (hasTranscribeActive) {
-            _isWaitingForTranscription = false;
-          }
-          if (hasSummarizeActive) {
-            _isWaitingForSummarization = false;
-          }
-        });
-
-        if (hasActiveTasks) {
-          _hadActiveTasks = true;
-          return;
+      setState(() {
+        _activeTasks = tasks;
+        if (hasTranscribeActive) {
+          _isWaitingForTranscription = false;
         }
-
-        if (_isWaitingForTranscription || _isWaitingForSummarization) {
-          return;
+        if (hasSummarizeActive) {
+          _isWaitingForSummarization = false;
         }
+      });
 
-        _stopTaskPolling();
-        if (_hadActiveTasks) {
-          _hadActiveTasks = false;
-          _loadAudioDetails(startPolling: false);
-        }
-      },
-    );
+      if (hasActiveTasks) {
+        _hadActiveTasks = true;
+        return;
+      }
+
+      if (_isWaitingForTranscription || _isWaitingForSummarization) {
+        return;
+      }
+
+      _stopTaskPolling();
+      if (_hadActiveTasks) {
+        _hadActiveTasks = false;
+        _loadAudioDetails(startPolling: false);
+      }
+    });
   }
 
   void _stopTaskPolling() {
@@ -231,26 +222,27 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
   Future<bool?> _showUnsavedChangesDialog() {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unsaved Changes'),
-        content: const Text(
-          'You have unsaved changes. Do you want to save before leaving?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Unsaved Changes'),
+            content: const Text(
+              'You have unsaved changes. Do you want to save before leaving?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Discard'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -275,34 +267,35 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename Audio'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'New filename',
-            border: OutlineInputBorder(),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Rename Audio'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'New filename',
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final newName = controller.text.trim();
+                  if (newName.isEmpty) {
+                    return;
+                  }
+                  Navigator.pop(context);
+                  _handleRename(newName);
+                },
+                child: const Text('Rename'),
+              ),
+            ],
           ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newName = controller.text.trim();
-              if (newName.isEmpty) {
-                return;
-              }
-              Navigator.pop(context);
-              _handleRename(newName);
-            },
-            child: const Text('Rename'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -331,26 +324,27 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Audio'),
-        content: const Text(
-          'Are you sure you want to delete this audio? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Delete Audio'),
+            content: const Text(
+              'Are you sure you want to delete this audio? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _handleDelete();
+                },
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _handleDelete();
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -393,7 +387,8 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     }
 
     result.fold(
-      (failure) => _showSnackBar('Failed to download audio: ${failure.message}'),
+      (failure) =>
+          _showSnackBar('Failed to download audio: ${failure.message}'),
       (_) => _showSnackBar('Audio downloaded successfully'),
     );
   }
@@ -413,14 +408,11 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     }
 
     String? errorMessage;
-    result.fold(
-      (failure) => errorMessage = failure.message,
-      (updatedAudio) {
-        setState(() {
-          _audioFile = updatedAudio;
-        });
-      },
-    );
+    result.fold((failure) => errorMessage = failure.message, (updatedAudio) {
+      setState(() {
+        _audioFile = updatedAudio;
+      });
+    });
 
     return errorMessage;
   }
@@ -437,13 +429,10 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     }
 
     String? errorMessage;
-    result.fold(
-      (failure) => errorMessage = failure.message,
-      (_) {
-        _isWaitingForTranscription = true;
-        _startTaskPolling();
-      },
-    );
+    result.fold((failure) => errorMessage = failure.message, (_) {
+      _isWaitingForTranscription = true;
+      _startTaskPolling();
+    });
 
     return errorMessage;
   }
@@ -460,13 +449,10 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     }
 
     String? errorMessage;
-    result.fold(
-      (failure) => errorMessage = failure.message,
-      (_) {
-        _isWaitingForSummarization = true;
-        _startTaskPolling();
-      },
-    );
+    result.fold((failure) => errorMessage = failure.message, (_) {
+      _isWaitingForSummarization = true;
+      _startTaskPolling();
+    });
 
     return errorMessage;
   }
@@ -493,9 +479,9 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildErrorState(String message) {
@@ -540,7 +526,11 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
         appBar: AppBar(
           backgroundColor: const Color(0xFF101822),
           elevation: 0,
-          title: Text(title, overflow: TextOverflow.ellipsis),
+          title: Text(
+            title,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white),
+          ),
           leading: IconButton(
             icon: const Icon(Icons.chevron_left),
             onPressed: () async {
@@ -554,38 +544,42 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
             PopupMenuButton<AudioMenuAction>(
               icon: const Icon(Icons.more_vert),
               onSelected: _handleMenuAction,
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: AudioMenuAction.rename,
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit),
-                      SizedBox(width: 12),
-                      Text('Rename Audio'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: AudioMenuAction.delete,
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text('Delete Audio', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: AudioMenuAction.download,
-                  child: Row(
-                    children: [
-                      Icon(Icons.download),
-                      SizedBox(width: 12),
-                      Text('Download Audio'),
-                    ],
-                  ),
-                ),
-              ],
+              itemBuilder:
+                  (context) => [
+                    const PopupMenuItem(
+                      value: AudioMenuAction.rename,
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit),
+                          SizedBox(width: 12),
+                          Text('Rename Audio'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: AudioMenuAction.delete,
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text(
+                            'Delete Audio',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: AudioMenuAction.download,
+                      child: Row(
+                        children: [
+                          Icon(Icons.download),
+                          SizedBox(width: 12),
+                          Text('Download Audio'),
+                        ],
+                      ),
+                    ),
+                  ],
             ),
           ],
           bottom: TabBar(
@@ -610,52 +604,56 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
             ],
           ),
         ),
-        body: _errorMessage != null && !_isLoading
-            ? _buildErrorState(_errorMessage!)
-            : Column(
-                children: [
-                  if (_isLoading)
-                    const LinearProgressIndicator(
-                      backgroundColor: Color(0xFF101822),
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
-                    ),
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      physics: _hasTranscript
-                          ? null
-                          : const NeverScrollableScrollPhysics(),
-                      children: [
-                        TranscriptionTab(
-                          audioFile: audioFile,
-                          hasTranscript: _hasTranscript,
-                          isTranscribing: _isTranscribing,
-                          onChanged: () =>
-                              setState(() => _transcriptDirty = true),
-                          onSaved: () =>
-                              setState(() => _transcriptDirty = false),
-                          onSaveTranscription: _handleSaveTranscription,
-                          onStartTranscription: _handleStartTranscription,
+        body:
+            _errorMessage != null && !_isLoading
+                ? _buildErrorState(_errorMessage!)
+                : Column(
+                  children: [
+                    if (_isLoading)
+                      const LinearProgressIndicator(
+                        backgroundColor: Color(0xFF101822),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF3B82F6),
                         ),
-                        SummaryTab(
+                      ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        physics:
+                            _hasTranscript
+                                ? null
+                                : const NeverScrollableScrollPhysics(),
+                        children: [
+                          TranscriptionTab(
+                            audioFile: audioFile,
+                            hasTranscript: _hasTranscript,
+                            isTranscribing: _isTranscribing,
+                            onChanged:
+                                () => setState(() => _transcriptDirty = true),
+                            onSaved:
+                                () => setState(() => _transcriptDirty = false),
+                            onSaveTranscription: _handleSaveTranscription,
+                            onStartTranscription: _handleStartTranscription,
+                          ),
+                          SummaryTab(
                             noteId: _summaryNote?.id,
-                          summaryHtml: _summaryNote?.summary ?? audioFile.summary,
-                          hasSummary: _hasSummary,
-                          enabled: _hasTranscript,
-                          isSummarizing: _isSummarizing,
-                          onChanged: () =>
-                              setState(() => _summaryDirty = true),
-                          onSaved: () =>
-                              setState(() => _summaryDirty = false),
-                          onStartSummarization: _handleStartSummarization,
+                            summaryHtml:
+                                _summaryNote?.summary ?? audioFile.summary,
+                            hasSummary: _hasSummary,
+                            enabled: _hasTranscript,
+                            isSummarizing: _isSummarizing,
+                            onChanged:
+                                () => setState(() => _summaryDirty = true),
+                            onSaved:
+                                () => setState(() => _summaryDirty = false),
+                            onStartSummarization: _handleStartSummarization,
                             onSaveSummary: _handleSaveSummary,
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
       ),
     );
   }

@@ -18,7 +18,10 @@ class NotificationDetailScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF101822),
         elevation: 0,
-        title: const Text('Notification Detail'),
+        title: const Text(
+          'Notification Detail',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -56,10 +59,7 @@ class NotificationDetailScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         _formatTimestamp(notification.createdAt),
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
                       ),
                     ],
                   ),
@@ -133,10 +133,8 @@ class NotificationDetailScreen extends StatelessWidget {
 
       AudioFile? resolvedAudio;
       result.fold(
-        (failure) => _showError(
-          context,
-          'Failed to load audio: ${failure.message}',
-        ),
+        (failure) =>
+            _showError(context, 'Failed to load audio: ${failure.message}'),
         (loadedAudio) => resolvedAudio = loadedAudio,
       );
       return resolvedAudio;
@@ -162,10 +160,8 @@ class NotificationDetailScreen extends StatelessWidget {
 
       Note? note;
       noteResult.fold(
-        (failure) => _showError(
-          context,
-          'Failed to load note: ${failure.message}',
-        ),
+        (failure) =>
+            _showError(context, 'Failed to load note: ${failure.message}'),
         (loadedNote) => note = loadedNote,
       );
 
@@ -180,10 +176,8 @@ class NotificationDetailScreen extends StatelessWidget {
 
       AudioFile? resolvedAudio;
       audioResult.fold(
-        (failure) => _showError(
-          context,
-          'Failed to load audio: ${failure.message}',
-        ),
+        (failure) =>
+            _showError(context, 'Failed to load audio: ${failure.message}'),
         (loadedAudio) => resolvedAudio = loadedAudio,
       );
       return resolvedAudio;
@@ -206,9 +200,7 @@ class NotificationDetailScreen extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -221,9 +213,9 @@ class NotificationDetailScreen extends StatelessWidget {
   }
 
   void _showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _formatTimestamp(DateTime timestamp) {

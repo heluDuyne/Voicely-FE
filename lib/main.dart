@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:voicely_fe/features/notifications/services/notification_service.dart';
 import 'package:voicely_fe/firebase_options.dart';
 
@@ -42,6 +43,7 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [FlutterQuillLocalizations.delegate],
       ),
     );
   }

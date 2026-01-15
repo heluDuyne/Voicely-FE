@@ -598,6 +598,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     inputBackgroundColor: const Color(0xFFF3F4F6),
                     inputTextColor: Colors.black87,
                     inputBorderRadius: BorderRadius.circular(24),
+                    inputPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 24, // 1. Increase vertical padding (was 20)
+                    ),
+                    inputTextStyle: const TextStyle(
+                      fontSize: 14,
+                      height: 2.0, // 2. Increase line height (was 1.5)
+                    ),
                     messageBorderRadius: 20,
                     userAvatarNameColors: const [Color(0xFF3B82F6)],
                     sendButtonIcon: const Icon(

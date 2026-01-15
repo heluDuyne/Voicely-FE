@@ -143,11 +143,7 @@ class _SummaryTabState extends State<SummaryTab> {
               color: Colors.grey[100],
               border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
             ),
-            child: quill.QuillToolbar.simple(
-              configurations: quill.QuillSimpleToolbarConfigurations(
-                controller: _controller,
-                sharedConfigurations: const quill.QuillSharedConfigurations(),
-              ),
+            child: quill.QuillSimpleToolbar(controller: _controller,
             ),
           ),
         Expanded(
@@ -160,12 +156,10 @@ class _SummaryTabState extends State<SummaryTab> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: quill.QuillEditor.basic(
-                configurations: quill.QuillEditorConfigurations(
-                  controller: _controller,
-                  sharedConfigurations: const quill.QuillSharedConfigurations(),
-                  placeholder: 'Summary content...',
-                ),
+              child: quill.QuillEditor(
+                controller: _controller,
+                scrollController: ScrollController(),
+                focusNode: FocusNode(),
               ),
             ),
           ),
@@ -177,7 +171,7 @@ class _SummaryTabState extends State<SummaryTab> {
               color: const Color(0xFF101822),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),

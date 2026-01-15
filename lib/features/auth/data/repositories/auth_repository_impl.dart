@@ -8,6 +8,8 @@ import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../datasources/auth_local_data_source.dart';
+import '../models/device_register_request_model.dart';
+import '../models/device_register_response_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
@@ -124,6 +126,30 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(NetworkFailure(e.message));
       } on ValidationException catch (e) {
         return Left(ValidationFailure(getErrorMessage(e.message)));
+      }
+    } else {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, DeviceRegisterResponseModel>> registerDevice(
+    DeviceRegisterRequestModel request,
+  ) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final response = await remoteDataSource.registerDevice(request);
+        return Right(response);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(getErrorMessage(e.message)));
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on ValidationException catch (e) {
+        return Left(ValidationFailure(getErrorMessage(e.message)));
+      } on UnauthorizedException catch (e) {
+        return Left(UnauthorizedFailure(getErrorMessage(e.message)));
+      } catch (e) {
+        return Left(ServerFailure('Failed to register device: $e'));
       }
     } else {
       return const Left(NetworkFailure('No internet connection'));

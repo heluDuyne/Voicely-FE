@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // Core
 import '../core/network/network_client.dart';
@@ -77,6 +78,7 @@ import '../features/notifications/domain/usecases/get_unread_count.dart';
 import '../features/notifications/domain/usecases/mark_all_notifications_as_read.dart';
 import '../features/notifications/domain/usecases/mark_notifications_as_read.dart';
 import '../features/notifications/presentation/bloc/notification_bloc.dart';
+import '../features/notifications/services/notification_service.dart';
 
 final sl = GetIt.instance;
 
@@ -298,10 +300,22 @@ Future<void> init() async {
     () => NotificationRemoteDataSourceImpl(dio: sl()),
   );
 
+  // Service
+  sl.registerLazySingleton<NotificationService>(
+    () => NotificationService(
+      authRepository: sl(),
+      localNotifications: sl(),
+    ),
+  );
+
   //! Core
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl());
 
   //! External
+  sl.registerLazySingleton<FlutterLocalNotificationsPlugin>(
+    () => FlutterLocalNotificationsPlugin(),
+  );
+
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
 

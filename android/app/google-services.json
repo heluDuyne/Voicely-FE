@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "584648115100",
+    "project_id": "voicely-6808a",
+    "storage_bucket": "voicely-6808a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:584648115100:android:a34ac69b91f588bc5f3e59",
+        "android_client_info": {
+          "package_name": "com.example.voicely_fe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSOKtfybabxr3XGKGGaq2oboo7XpjpSr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

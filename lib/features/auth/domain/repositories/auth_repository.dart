@@ -1,5 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
+import '../../data/models/device_register_request_model.dart';
+import '../../data/models/device_register_response_model.dart';
 import '../entities/auth_response.dart';
 import '../entities/user.dart';
 
@@ -10,4 +12,7 @@ abstract class AuthRepository {
   Future<Either<Failure, AuthResponse>> refreshToken(String refreshToken);
   Future<Either<Failure, void>> logout();
   Future<Either<Failure, User?>> getCurrentUser();
+  Future<Either<Failure, DeviceRegisterResponseModel>> registerDevice(
+    DeviceRegisterRequestModel request,
+  );
 }

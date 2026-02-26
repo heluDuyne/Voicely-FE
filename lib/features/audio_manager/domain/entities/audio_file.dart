@@ -19,6 +19,7 @@ class AudioFile extends Equatable {
   final String? summary;
   final int? transcriptionId;
   final bool? hasSummary;
+  final int? folderId;
 
   const AudioFile({
     required this.id,
@@ -39,6 +40,7 @@ class AudioFile extends Equatable {
     this.summary,
     this.transcriptionId,
     this.hasSummary,
+    this.folderId,
   });
 
   @override
@@ -61,5 +63,6 @@ class AudioFile extends Equatable {
     summary,
     transcriptionId,
     hasSummary,
+    folderId,
   ];
 }

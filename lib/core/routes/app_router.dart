@@ -18,6 +18,8 @@ import '../../features/profile/presentation/pages/edit_profile_screen.dart';
 import '../../features/test/presentation/pages/test_screen.dart';
 import '../../features/transcription/presentation/pages/transcription_page.dart';
 import '../../features/summary/presentation/pages/summary_page.dart';
+import '../../features/folders/presentation/pages/all_folders_screen.dart';
+import '../../features/folders/presentation/pages/folder_detail_screen.dart';
 
 class AppRoutes {
   static const String landing = '/';
@@ -27,6 +29,8 @@ class AppRoutes {
   static const String recording = '/recording';
   static const String transcriptList = '/transcript-list';
   static const String addFolder = '/add-folder';
+  static const String allFolders = '/folders';
+  static const String folderDetail = '/folders/:id';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String test = '/test';
@@ -73,6 +77,24 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.addFolder,
       name: 'addFolder',
       builder: (context, state) => const AddFolderScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.allFolders,
+      name: 'allFolders',
+      builder: (context, state) => const AllFoldersScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.folderDetail,
+      name: 'folderDetail',
+      builder: (context, state) {
+        final folderId = int.tryParse(state.pathParameters['id'] ?? '');
+        if (folderId == null) {
+          return const Scaffold(
+            body: Center(child: Text('Invalid folder id')),
+          );
+        }
+        return FolderDetailScreen(folderId: folderId);
+      },
     ),
     GoRoute(
       path: AppRoutes.profile,

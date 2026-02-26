@@ -6,6 +6,8 @@ class FolderCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Color iconColor;
   final Color backgroundColor;
+  final IconData icon;
+  final Color? indicatorColor;
 
   const FolderCard({
     super.key,
@@ -14,10 +16,13 @@ class FolderCard extends StatelessWidget {
     this.onTap,
     this.iconColor = const Color(0xFF3B82F6),
     this.backgroundColor = const Color(0xFF282E39),
+    this.icon = Icons.folder,
+    this.indicatorColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final chipColor = indicatorColor ?? iconColor;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -30,10 +35,19 @@ class FolderCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              Icons.folder,
-              color: iconColor,
-              size: 32,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: iconColor, size: 32),
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: chipColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +180,6 @@ class DashedBorderPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
 
 
 

@@ -1,7 +1,11 @@
 class AppConstants {
   // API for android emulator
+  // static const String baseUrl =
+  //     'http://10.0.2.2:8000';
+  // static const String baseUrl =
+  //     'http://10.0.2.2:8000'; // Localhost for Android emulator
   static const String baseUrl =
-      'http://10.0.2.2:8000';
+      'https://congregational-bula-coaxingly.ngrok-free.dev'; // Localhost for Android emulator
   // static const String apiVersion = '/v1'; // Commented out API version prefix
 
   // Endpoints
@@ -25,12 +29,17 @@ class AppConstants {
   static const String unreadCountEndpoint = '/notifications/unread-count';
   static const String markReadEndpoint = '/notifications/mark-read';
   static const String markAllReadEndpoint = '/notifications/mark-all-read';
+  static const String foldersEndpoint = '/folders/';
+  static const String folderSearchEndpoint = '/folders/search';
+  static const String moveAudioToFolderEndpoint = '/folders/move-audio';
 
   static String audioFileById(int id) => '/audio/files/$id';
   static String updateAudio(int id) => '/audio/$id';
   static String deleteAudio(int id) => '/audio/files/$id';
   static String downloadAudio(int id) => '/audio/files/$id/download';
   static String updateNote(int id) => '/notes/$id';
+  static String folderById(int id) => '/folders/$id';
+  static String folderAudio(int id) => '/folders/$id/audio';
   static String chatbotMessagesAsync(String sessionId) =>
       '/chatbot/sessions/$sessionId/messages-async';
   static String chatbotMessages(String sessionId) =>

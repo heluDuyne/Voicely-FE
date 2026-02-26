@@ -1,6 +1,14 @@
 import 'dart:async';
+import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../injection_container/injection_container.dart';
+import '../../../folders/domain/entities/folder_page.dart';
+import '../../../folders/domain/entities/folder_search_dto.dart';
+import '../../../folders/domain/entities/move_audio_to_folder.dart'
+    as folder_dto;
+import '../../../folders/domain/repositories/folder_repository.dart';
+import '../../../folders/presentation/widgets/folder_ui_helpers.dart';
 import '../../domain/entities/audio_file.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/task.dart';
@@ -8,7 +16,7 @@ import '../../domain/repositories/audio_manager_repository.dart';
 import 'summary_tab.dart';
 import 'transcription_tab.dart';
 
-enum AudioMenuAction { rename, delete, download }
+enum AudioMenuAction { rename, addToFolder, delete, download }
 
 class AudioDetailScreen extends StatefulWidget {
   final AudioFile audioFile;
@@ -22,6 +30,7 @@ class AudioDetailScreen extends StatefulWidget {
 class _AudioDetailScreenState extends State<AudioDetailScreen>
     with SingleTickerProviderStateMixin {
   final AudioManagerRepository _repository = sl<AudioManagerRepository>();
+  final FolderRepository _folderRepository = sl<FolderRepository>();
   late final TabController _tabController;
 
   AudioFile? _audioFile;
@@ -35,6 +44,7 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
   String? _errorMessage;
   bool _transcriptDirty = false;
   bool _summaryDirty = false;
+  String? _currentFolderName;
 
   bool get _hasTranscript {
     final text = _audioFile?.transcription;
@@ -115,6 +125,7 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
           _audioFile = audioFile;
           _isLoading = false;
         });
+        await _loadCurrentFolderName(audioFile.folderId);
         await _loadSummary();
         if (startPolling) {
           _startTaskPolling();
@@ -150,6 +161,28 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     result.fold((_) {}, (note) {
       setState(() {
         _summaryNote = note;
+      });
+    });
+  }
+
+  Future<void> _loadCurrentFolderName(int? folderId) async {
+    if (folderId == null) {
+      if (mounted) {
+        setState(() {
+          _currentFolderName = null;
+        });
+      }
+      return;
+    }
+
+    final result = await _folderRepository.getFolderDetails(folderId);
+    if (!mounted) {
+      return;
+    }
+
+    result.fold((_) {}, (folder) {
+      setState(() {
+        _currentFolderName = folder.name;
       });
     });
   }
@@ -251,6 +284,9 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
       case AudioMenuAction.rename:
         _showRenameDialog();
         break;
+      case AudioMenuAction.addToFolder:
+        _showAddToFolderDialog();
+        break;
       case AudioMenuAction.delete:
         _showDeleteConfirmation();
         break;
@@ -317,6 +353,73 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
           _audioFile = updatedAudio;
         });
         _showSnackBar('Audio renamed successfully');
+      },
+    );
+  }
+
+  Future<void> _showAddToFolderDialog() async {
+    final audioFile = _audioFile;
+    if (audioFile == null) {
+      return;
+    }
+
+    final selection = await showModalBottomSheet<_FolderSelectionResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF101822),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => _FolderSelectionSheet(
+            repository: _folderRepository,
+            currentFolderId: audioFile.folderId,
+          ),
+    );
+
+    if (!mounted || selection == null) {
+      return;
+    }
+
+    await _moveAudioToFolder(selection);
+  }
+
+  Future<void> _moveAudioToFolder(_FolderSelectionResult selection) async {
+    final audioFile = _audioFile;
+    if (audioFile == null) {
+      return;
+    }
+
+    final result = await _folderRepository.moveAudioToFolder(
+      folder_dto.MoveAudioToFolder(
+        audioId: audioFile.id,
+        folderId: selection.folderId,
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    result.fold(
+      (failure) =>
+          _showSnackBar('Failed to move audio: ${failure.message}'),
+      (updatedAudio) {
+        setState(() {
+          _audioFile = updatedAudio;
+          if (selection.folderId == null) {
+            _currentFolderName = null;
+          } else if (selection.folderName != null) {
+            _currentFolderName = selection.folderName;
+          }
+        });
+        if (selection.folderId == null) {
+          _showSnackBar('Audio removed from folder');
+        } else if (selection.folderName != null) {
+          _showSnackBar('Moved to ${selection.folderName}');
+        } else {
+          _showSnackBar('Audio moved successfully');
+        }
       },
     );
   }
@@ -557,6 +660,16 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
                       ),
                     ),
                     const PopupMenuItem(
+                      value: AudioMenuAction.addToFolder,
+                      child: Row(
+                        children: [
+                          Icon(Icons.folder_open),
+                          SizedBox(width: 12),
+                          Text('Add to Folder'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
                       value: AudioMenuAction.delete,
                       child: Row(
                         children: [
@@ -616,6 +729,32 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
                           Color(0xFF3B82F6),
                         ),
                       ),
+                    if (_currentFolderName != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        color: const Color(0xFF141C26),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.folder_open,
+                              color: Color(0xFF3B82F6),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Folder: $_currentFolderName',
+                                style: const TextStyle(color: Colors.white70),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
@@ -655,6 +794,254 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
                   ],
                 ),
       ),
+    );
+  }
+}
+
+class _FolderSelectionResult {
+  final int? folderId;
+  final String? folderName;
+
+  const _FolderSelectionResult({this.folderId, this.folderName});
+}
+
+class _FolderSelectionSheet extends StatefulWidget {
+  final FolderRepository repository;
+  final int? currentFolderId;
+
+  const _FolderSelectionSheet({
+    required this.repository,
+    required this.currentFolderId,
+  });
+
+  @override
+  State<_FolderSelectionSheet> createState() => _FolderSelectionSheetState();
+}
+
+class _FolderSelectionSheetState extends State<_FolderSelectionSheet> {
+  late final TextEditingController _searchController;
+  late final Future<dartz.Either<Failure, FolderPage>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _future = widget.repository.searchFolders(
+      const FolderSearchDto(
+        page: 1,
+        pageSize: 100,
+        order: 'DESC',
+        isDropdown: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: viewInsets),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF101822),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 48,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[600],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Move to Folder',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF282E39),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Search folders...',
+                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        prefixIcon:
+                            Icon(Icons.search, color: Colors.grey[600]),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: FutureBuilder<dartz.Either<Failure, FolderPage>>(
+                    future: _future,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      final data = snapshot.data;
+                      if (data == null) {
+                        return const Center(
+                          child: Text(
+                            'Failed to load folders',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        );
+                      }
+
+                      return data.fold(
+                        (failure) => Center(
+                          child: Text(
+                            failure.message,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                        (page) {
+                          final query = _searchController.text.trim().toLowerCase();
+                          final folders = query.isEmpty
+                              ? page.items
+                              : page.items.where((folder) {
+                                  final name = folder.name.toLowerCase();
+                                  final description =
+                                      folder.description?.toLowerCase() ?? '';
+                                  return name.contains(query) ||
+                                      description.contains(query);
+                                }).toList();
+
+                          return ListView.builder(
+                            controller: scrollController,
+                            itemCount: folders.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                final isSelected =
+                                    widget.currentFolderId == null;
+                                return _buildFolderOption(
+                                  context,
+                                  title: 'No Folder',
+                                  icon: Icons.folder_off_outlined,
+                                  color: Colors.grey,
+                                  isSelected: isSelected,
+                                  onTap: () {
+                                    Navigator.pop(
+                                      context,
+                                      const _FolderSelectionResult(),
+                                    );
+                                  },
+                                );
+                              }
+                              final folder = folders[index - 1];
+                              final color = parseHexColor(folder.color);
+                              final icon = folderIconFromName(folder.icon);
+                              final isSelected =
+                                  widget.currentFolderId == folder.id;
+                              return _buildFolderOption(
+                                context,
+                                title: folder.name,
+                                subtitle: folder.description,
+                                icon: icon,
+                                color: color,
+                                isSelected: isSelected,
+                                onTap: () {
+                                  Navigator.pop(
+                                    context,
+                                    _FolderSelectionResult(
+                                      folderId: folder.id,
+                                      folderName: folder.name,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFolderOption(
+    BuildContext context, {
+    required String title,
+    String? subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.18),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle:
+          subtitle == null || subtitle.isEmpty
+              ? null
+              : Text(
+                subtitle,
+                style: TextStyle(color: Colors.grey[500]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+      trailing:
+          isSelected
+              ? const Icon(Icons.check, color: Color(0xFF3B82F6))
+              : null,
     );
   }
 }

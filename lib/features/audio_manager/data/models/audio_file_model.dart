@@ -20,6 +20,7 @@ class AudioFileModel extends AudioFile {
     super.summary,
     super.transcriptionId,
     super.hasSummary,
+    super.folderId,
   });
 
   factory AudioFileModel.fromJson(Map<String, dynamic> json) {
@@ -93,6 +94,7 @@ class AudioFileModel extends AudioFile {
       summary: _stringFrom(json['summary']),
       transcriptionId: _intFrom(json['transcription_id']),
       hasSummary: parsedHasSummary,
+      folderId: _intFrom(json['folder_id']),
     );
   }
 
@@ -116,6 +118,7 @@ class AudioFileModel extends AudioFile {
       'summary': summary,
       'transcription_id': transcriptionId,
       'has_summary': hasSummary,
+      'folder_id': folderId,
     };
   }
 }

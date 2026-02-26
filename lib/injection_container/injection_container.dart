@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // Core
 import '../core/network/network_client.dart';
@@ -77,6 +78,19 @@ import '../features/notifications/domain/usecases/get_unread_count.dart';
 import '../features/notifications/domain/usecases/mark_all_notifications_as_read.dart';
 import '../features/notifications/domain/usecases/mark_notifications_as_read.dart';
 import '../features/notifications/presentation/bloc/notification_bloc.dart';
+import '../features/notifications/services/notification_service.dart';
+// Features - Folders
+import '../features/folders/data/datasources/folder_remote_data_source.dart';
+import '../features/folders/data/repositories/folder_repository_impl.dart';
+import '../features/folders/domain/repositories/folder_repository.dart';
+import '../features/folders/domain/usecases/create_folder.dart';
+import '../features/folders/domain/usecases/delete_folder.dart';
+import '../features/folders/domain/usecases/get_audio_in_folder.dart';
+import '../features/folders/domain/usecases/get_folder_details.dart';
+import '../features/folders/domain/usecases/move_audio_to_folder.dart';
+import '../features/folders/domain/usecases/search_folders.dart';
+import '../features/folders/domain/usecases/update_folder.dart';
+import '../features/folders/presentation/bloc/folder_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -247,6 +261,44 @@ Future<void> init() async {
     () => SummaryLocalDataSourceImpl(sharedPreferences: sl()),
   );
 
+  //! Features - Folders
+  // Bloc
+  sl.registerFactory(
+    () => FolderBloc(
+      createFolder: sl(),
+      searchFolders: sl(),
+      getFolderDetails: sl(),
+      updateFolder: sl(),
+      deleteFolder: sl(),
+      getAudioInFolder: sl(),
+      moveAudioToFolder: sl(),
+      getUploadedAudios: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => CreateFolder(sl()));
+  sl.registerLazySingleton(() => SearchFolders(sl()));
+  sl.registerLazySingleton(() => GetFolderDetails(sl()));
+  sl.registerLazySingleton(() => UpdateFolder(sl()));
+  sl.registerLazySingleton(() => DeleteFolder(sl()));
+  sl.registerLazySingleton(() => GetAudioInFolder(sl()));
+  sl.registerLazySingleton(() => MoveAudioToFolderUseCase(sl()));
+
+  // Repository
+  sl.registerLazySingleton<FolderRepository>(
+    () => FolderRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<FolderRemoteDataSource>(
+    () => FolderRemoteDataSourceImpl(dio: sl()),
+  );
+
   //! Features - Chatbot
   sl.registerLazySingleton<ChatbotRepository>(
     () => ChatbotRepositoryImpl(
@@ -298,10 +350,22 @@ Future<void> init() async {
     () => NotificationRemoteDataSourceImpl(dio: sl()),
   );
 
+  // Service
+  sl.registerLazySingleton<NotificationService>(
+    () => NotificationService(
+      authRepository: sl(),
+      localNotifications: sl(),
+    ),
+  );
+
   //! Core
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl());
 
   //! External
+  sl.registerLazySingleton<FlutterLocalNotificationsPlugin>(
+    () => FlutterLocalNotificationsPlugin(),
+  );
+
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
 

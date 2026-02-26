@@ -11,6 +11,7 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+vibe-coding*/
 
 # IntelliJ related
 *.iml
@@ -43,4 +44,4 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-/android/app/google-services.json
+# /android/app/google-services.json google-services.json is usually not considered to be private

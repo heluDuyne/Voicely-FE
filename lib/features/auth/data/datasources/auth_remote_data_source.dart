@@ -2,12 +2,17 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../models/auth_response_model.dart';
+import '../models/device_register_request_model.dart';
+import '../models/device_register_response_model.dart';
 import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<UserModel> register(String email, String password);
   Future<AuthResponseModel> login(String email, String password);
   Future<AuthResponseModel> refreshToken(String refreshToken);
+  Future<DeviceRegisterResponseModel> registerDevice(
+    DeviceRegisterRequestModel request,
+  );
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -84,6 +89,29 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return AuthResponseModel.fromJson(payload);
     } on DioException catch (e) {
       throw _handleDioException(e, fallbackMessage: 'Token refresh failed');
+    }
+  }
+
+  @override
+  Future<DeviceRegisterResponseModel> registerDevice(
+    DeviceRegisterRequestModel request,
+  ) async {
+    try {
+      final response = await dio.post(
+        AppConstants.registerDeviceEndpoint,
+        data: request.toJson(),
+      );
+
+      final payload = _extractPayload(
+        response,
+        fallbackMessage: 'Device registration failed',
+      );
+      return DeviceRegisterResponseModel.fromJson(payload);
+    } on DioException catch (e) {
+      throw _handleDioException(
+        e,
+        fallbackMessage: 'Device registration failed',
+      );
     }
   }
 

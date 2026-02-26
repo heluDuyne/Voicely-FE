@@ -1,6 +1,14 @@
 import 'dart:async';
+import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../injection_container/injection_container.dart';
+import '../../../folders/domain/entities/folder_page.dart';
+import '../../../folders/domain/entities/folder_search_dto.dart';
+import '../../../folders/domain/entities/move_audio_to_folder.dart'
+    as folder_dto;
+import '../../../folders/domain/repositories/folder_repository.dart';
+import '../../../folders/presentation/widgets/folder_ui_helpers.dart';
 import '../../domain/entities/audio_file.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/task.dart';
@@ -8,7 +16,7 @@ import '../../domain/repositories/audio_manager_repository.dart';
 import 'summary_tab.dart';
 import 'transcription_tab.dart';
 
-enum AudioMenuAction { rename, delete, download }
+enum AudioMenuAction { rename, addToFolder, delete, download }
 
 class AudioDetailScreen extends StatefulWidget {
   final AudioFile audioFile;
@@ -22,6 +30,7 @@ class AudioDetailScreen extends StatefulWidget {
 class _AudioDetailScreenState extends State<AudioDetailScreen>
     with SingleTickerProviderStateMixin {
   final AudioManagerRepository _repository = sl<AudioManagerRepository>();
+  final FolderRepository _folderRepository = sl<FolderRepository>();
   late final TabController _tabController;
 
   AudioFile? _audioFile;
@@ -35,6 +44,7 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
   String? _errorMessage;
   bool _transcriptDirty = false;
   bool _summaryDirty = false;
+  String? _currentFolderName;
 
   bool get _hasTranscript {
     final text = _audioFile?.transcription;
@@ -86,9 +96,7 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
           return;
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please transcribe the audio first'),
-          ),
+          const SnackBar(content: Text('Please transcribe the audio first')),
         );
       });
     }
@@ -117,6 +125,7 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
           _audioFile = audioFile;
           _isLoading = false;
         });
+        await _loadCurrentFolderName(audioFile.folderId);
         await _loadSummary();
         if (startPolling) {
           _startTaskPolling();
@@ -131,7 +140,8 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
       return;
     }
 
-    final shouldLoad = audioFile.isSummarize == true ||
+    final shouldLoad =
+        audioFile.isSummarize == true ||
         audioFile.hasSummary == true ||
         audioFile.summary != null;
     if (!shouldLoad) {
@@ -148,14 +158,33 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
       return;
     }
 
-    result.fold(
-      (_) {},
-      (note) {
+    result.fold((_) {}, (note) {
+      setState(() {
+        _summaryNote = note;
+      });
+    });
+  }
+
+  Future<void> _loadCurrentFolderName(int? folderId) async {
+    if (folderId == null) {
+      if (mounted) {
         setState(() {
-          _summaryNote = note;
+          _currentFolderName = null;
         });
-      },
-    );
+      }
+      return;
+    }
+
+    final result = await _folderRepository.getFolderDetails(folderId);
+    if (!mounted) {
+      return;
+    }
+
+    result.fold((_) {}, (folder) {
+      setState(() {
+        _currentFolderName = folder.name;
+      });
+    });
   }
 
   void _startTaskPolling() {
@@ -178,41 +207,36 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
       return;
     }
 
-    result.fold(
-      (_) {},
-      (tasks) {
-        final hasActiveTasks = tasks.any((task) => task.isActive);
-        final hasTranscribeActive =
-            tasks.any((task) => task.isTranscribing);
-        final hasSummarizeActive =
-            tasks.any((task) => task.isSummarizing);
+    result.fold((_) {}, (tasks) {
+      final hasActiveTasks = tasks.any((task) => task.isActive);
+      final hasTranscribeActive = tasks.any((task) => task.isTranscribing);
+      final hasSummarizeActive = tasks.any((task) => task.isSummarizing);
 
-        setState(() {
-          _activeTasks = tasks;
-          if (hasTranscribeActive) {
-            _isWaitingForTranscription = false;
-          }
-          if (hasSummarizeActive) {
-            _isWaitingForSummarization = false;
-          }
-        });
-
-        if (hasActiveTasks) {
-          _hadActiveTasks = true;
-          return;
+      setState(() {
+        _activeTasks = tasks;
+        if (hasTranscribeActive) {
+          _isWaitingForTranscription = false;
         }
-
-        if (_isWaitingForTranscription || _isWaitingForSummarization) {
-          return;
+        if (hasSummarizeActive) {
+          _isWaitingForSummarization = false;
         }
+      });
 
-        _stopTaskPolling();
-        if (_hadActiveTasks) {
-          _hadActiveTasks = false;
-          _loadAudioDetails(startPolling: false);
-        }
-      },
-    );
+      if (hasActiveTasks) {
+        _hadActiveTasks = true;
+        return;
+      }
+
+      if (_isWaitingForTranscription || _isWaitingForSummarization) {
+        return;
+      }
+
+      _stopTaskPolling();
+      if (_hadActiveTasks) {
+        _hadActiveTasks = false;
+        _loadAudioDetails(startPolling: false);
+      }
+    });
   }
 
   void _stopTaskPolling() {
@@ -231,26 +255,27 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
   Future<bool?> _showUnsavedChangesDialog() {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unsaved Changes'),
-        content: const Text(
-          'You have unsaved changes. Do you want to save before leaving?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Unsaved Changes'),
+            content: const Text(
+              'You have unsaved changes. Do you want to save before leaving?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Discard'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -258,6 +283,9 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     switch (action) {
       case AudioMenuAction.rename:
         _showRenameDialog();
+        break;
+      case AudioMenuAction.addToFolder:
+        _showAddToFolderDialog();
         break;
       case AudioMenuAction.delete:
         _showDeleteConfirmation();
@@ -275,34 +303,35 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename Audio'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'New filename',
-            border: OutlineInputBorder(),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Rename Audio'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'New filename',
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final newName = controller.text.trim();
+                  if (newName.isEmpty) {
+                    return;
+                  }
+                  Navigator.pop(context);
+                  _handleRename(newName);
+                },
+                child: const Text('Rename'),
+              ),
+            ],
           ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newName = controller.text.trim();
-              if (newName.isEmpty) {
-                return;
-              }
-              Navigator.pop(context);
-              _handleRename(newName);
-            },
-            child: const Text('Rename'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -328,29 +357,97 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     );
   }
 
+  Future<void> _showAddToFolderDialog() async {
+    final audioFile = _audioFile;
+    if (audioFile == null) {
+      return;
+    }
+
+    final selection = await showModalBottomSheet<_FolderSelectionResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF101822),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => _FolderSelectionSheet(
+            repository: _folderRepository,
+            currentFolderId: audioFile.folderId,
+          ),
+    );
+
+    if (!mounted || selection == null) {
+      return;
+    }
+
+    await _moveAudioToFolder(selection);
+  }
+
+  Future<void> _moveAudioToFolder(_FolderSelectionResult selection) async {
+    final audioFile = _audioFile;
+    if (audioFile == null) {
+      return;
+    }
+
+    final result = await _folderRepository.moveAudioToFolder(
+      folder_dto.MoveAudioToFolder(
+        audioId: audioFile.id,
+        folderId: selection.folderId,
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    result.fold(
+      (failure) =>
+          _showSnackBar('Failed to move audio: ${failure.message}'),
+      (updatedAudio) {
+        setState(() {
+          _audioFile = updatedAudio;
+          if (selection.folderId == null) {
+            _currentFolderName = null;
+          } else if (selection.folderName != null) {
+            _currentFolderName = selection.folderName;
+          }
+        });
+        if (selection.folderId == null) {
+          _showSnackBar('Audio removed from folder');
+        } else if (selection.folderName != null) {
+          _showSnackBar('Moved to ${selection.folderName}');
+        } else {
+          _showSnackBar('Audio moved successfully');
+        }
+      },
+    );
+  }
+
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Audio'),
-        content: const Text(
-          'Are you sure you want to delete this audio? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Delete Audio'),
+            content: const Text(
+              'Are you sure you want to delete this audio? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _handleDelete();
+                },
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _handleDelete();
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -393,7 +490,8 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     }
 
     result.fold(
-      (failure) => _showSnackBar('Failed to download audio: ${failure.message}'),
+      (failure) =>
+          _showSnackBar('Failed to download audio: ${failure.message}'),
       (_) => _showSnackBar('Audio downloaded successfully'),
     );
   }
@@ -413,14 +511,11 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     }
 
     String? errorMessage;
-    result.fold(
-      (failure) => errorMessage = failure.message,
-      (updatedAudio) {
-        setState(() {
-          _audioFile = updatedAudio;
-        });
-      },
-    );
+    result.fold((failure) => errorMessage = failure.message, (updatedAudio) {
+      setState(() {
+        _audioFile = updatedAudio;
+      });
+    });
 
     return errorMessage;
   }
@@ -437,13 +532,10 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     }
 
     String? errorMessage;
-    result.fold(
-      (failure) => errorMessage = failure.message,
-      (_) {
-        _isWaitingForTranscription = true;
-        _startTaskPolling();
-      },
-    );
+    result.fold((failure) => errorMessage = failure.message, (_) {
+      _isWaitingForTranscription = true;
+      _startTaskPolling();
+    });
 
     return errorMessage;
   }
@@ -460,13 +552,10 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
     }
 
     String? errorMessage;
-    result.fold(
-      (failure) => errorMessage = failure.message,
-      (_) {
-        _isWaitingForSummarization = true;
-        _startTaskPolling();
-      },
-    );
+    result.fold((failure) => errorMessage = failure.message, (_) {
+      _isWaitingForSummarization = true;
+      _startTaskPolling();
+    });
 
     return errorMessage;
   }
@@ -493,9 +582,9 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildErrorState(String message) {
@@ -540,7 +629,11 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
         appBar: AppBar(
           backgroundColor: const Color(0xFF101822),
           elevation: 0,
-          title: Text(title, overflow: TextOverflow.ellipsis),
+          title: Text(
+            title,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white),
+          ),
           leading: IconButton(
             icon: const Icon(Icons.chevron_left),
             onPressed: () async {
@@ -554,38 +647,52 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
             PopupMenuButton<AudioMenuAction>(
               icon: const Icon(Icons.more_vert),
               onSelected: _handleMenuAction,
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: AudioMenuAction.rename,
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit),
-                      SizedBox(width: 12),
-                      Text('Rename Audio'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: AudioMenuAction.delete,
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text('Delete Audio', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: AudioMenuAction.download,
-                  child: Row(
-                    children: [
-                      Icon(Icons.download),
-                      SizedBox(width: 12),
-                      Text('Download Audio'),
-                    ],
-                  ),
-                ),
-              ],
+              itemBuilder:
+                  (context) => [
+                    const PopupMenuItem(
+                      value: AudioMenuAction.rename,
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit),
+                          SizedBox(width: 12),
+                          Text('Rename Audio'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: AudioMenuAction.addToFolder,
+                      child: Row(
+                        children: [
+                          Icon(Icons.folder_open),
+                          SizedBox(width: 12),
+                          Text('Add to Folder'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: AudioMenuAction.delete,
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text(
+                            'Delete Audio',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: AudioMenuAction.download,
+                      child: Row(
+                        children: [
+                          Icon(Icons.download),
+                          SizedBox(width: 12),
+                          Text('Download Audio'),
+                        ],
+                      ),
+                    ),
+                  ],
             ),
           ],
           bottom: TabBar(
@@ -610,53 +717,331 @@ class _AudioDetailScreenState extends State<AudioDetailScreen>
             ],
           ),
         ),
-        body: _errorMessage != null && !_isLoading
-            ? _buildErrorState(_errorMessage!)
-            : Column(
-                children: [
-                  if (_isLoading)
-                    const LinearProgressIndicator(
-                      backgroundColor: Color(0xFF101822),
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
-                    ),
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      physics: _hasTranscript
-                          ? null
-                          : const NeverScrollableScrollPhysics(),
-                      children: [
-                        TranscriptionTab(
-                          audioFile: audioFile,
-                          hasTranscript: _hasTranscript,
-                          isTranscribing: _isTranscribing,
-                          onChanged: () =>
-                              setState(() => _transcriptDirty = true),
-                          onSaved: () =>
-                              setState(() => _transcriptDirty = false),
-                          onSaveTranscription: _handleSaveTranscription,
-                          onStartTranscription: _handleStartTranscription,
+        body:
+            _errorMessage != null && !_isLoading
+                ? _buildErrorState(_errorMessage!)
+                : Column(
+                  children: [
+                    if (_isLoading)
+                      const LinearProgressIndicator(
+                        backgroundColor: Color(0xFF101822),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF3B82F6),
                         ),
-                        SummaryTab(
+                      ),
+                    if (_currentFolderName != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        color: const Color(0xFF141C26),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.folder_open,
+                              color: Color(0xFF3B82F6),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Folder: $_currentFolderName',
+                                style: const TextStyle(color: Colors.white70),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        physics:
+                            _hasTranscript
+                                ? null
+                                : const NeverScrollableScrollPhysics(),
+                        children: [
+                          TranscriptionTab(
+                            audioFile: audioFile,
+                            hasTranscript: _hasTranscript,
+                            isTranscribing: _isTranscribing,
+                            onChanged:
+                                () => setState(() => _transcriptDirty = true),
+                            onSaved:
+                                () => setState(() => _transcriptDirty = false),
+                            onSaveTranscription: _handleSaveTranscription,
+                            onStartTranscription: _handleStartTranscription,
+                          ),
+                          SummaryTab(
                             noteId: _summaryNote?.id,
-                          summaryHtml: _summaryNote?.summary ?? audioFile.summary,
-                          hasSummary: _hasSummary,
-                          enabled: _hasTranscript,
-                          isSummarizing: _isSummarizing,
-                          onChanged: () =>
-                              setState(() => _summaryDirty = true),
-                          onSaved: () =>
-                              setState(() => _summaryDirty = false),
-                          onStartSummarization: _handleStartSummarization,
+                            summaryHtml:
+                                _summaryNote?.summary ?? audioFile.summary,
+                            hasSummary: _hasSummary,
+                            enabled: _hasTranscript,
+                            isSummarizing: _isSummarizing,
+                            onChanged:
+                                () => setState(() => _summaryDirty = true),
+                            onSaved:
+                                () => setState(() => _summaryDirty = false),
+                            onStartSummarization: _handleStartSummarization,
                             onSaveSummary: _handleSaveSummary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+      ),
+    );
+  }
+}
+
+class _FolderSelectionResult {
+  final int? folderId;
+  final String? folderName;
+
+  const _FolderSelectionResult({this.folderId, this.folderName});
+}
+
+class _FolderSelectionSheet extends StatefulWidget {
+  final FolderRepository repository;
+  final int? currentFolderId;
+
+  const _FolderSelectionSheet({
+    required this.repository,
+    required this.currentFolderId,
+  });
+
+  @override
+  State<_FolderSelectionSheet> createState() => _FolderSelectionSheetState();
+}
+
+class _FolderSelectionSheetState extends State<_FolderSelectionSheet> {
+  late final TextEditingController _searchController;
+  late final Future<dartz.Either<Failure, FolderPage>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _future = widget.repository.searchFolders(
+      const FolderSearchDto(
+        page: 1,
+        pageSize: 100,
+        order: 'DESC',
+        isDropdown: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: viewInsets),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF101822),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 48,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[600],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Move to Folder',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF282E39),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Search folders...',
+                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        prefixIcon:
+                            Icon(Icons.search, color: Colors.grey[600]),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                      ],
+                      ),
+                      onChanged: (_) => setState(() {}),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: FutureBuilder<dartz.Either<Failure, FolderPage>>(
+                    future: _future,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      final data = snapshot.data;
+                      if (data == null) {
+                        return const Center(
+                          child: Text(
+                            'Failed to load folders',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        );
+                      }
+
+                      return data.fold(
+                        (failure) => Center(
+                          child: Text(
+                            failure.message,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                        (page) {
+                          final query = _searchController.text.trim().toLowerCase();
+                          final folders = query.isEmpty
+                              ? page.items
+                              : page.items.where((folder) {
+                                  final name = folder.name.toLowerCase();
+                                  final description =
+                                      folder.description?.toLowerCase() ?? '';
+                                  return name.contains(query) ||
+                                      description.contains(query);
+                                }).toList();
+
+                          return ListView.builder(
+                            controller: scrollController,
+                            itemCount: folders.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                final isSelected =
+                                    widget.currentFolderId == null;
+                                return _buildFolderOption(
+                                  context,
+                                  title: 'No Folder',
+                                  icon: Icons.folder_off_outlined,
+                                  color: Colors.grey,
+                                  isSelected: isSelected,
+                                  onTap: () {
+                                    Navigator.pop(
+                                      context,
+                                      const _FolderSelectionResult(),
+                                    );
+                                  },
+                                );
+                              }
+                              final folder = folders[index - 1];
+                              final color = parseHexColor(folder.color);
+                              final icon = folderIconFromName(folder.icon);
+                              final isSelected =
+                                  widget.currentFolderId == folder.id;
+                              return _buildFolderOption(
+                                context,
+                                title: folder.name,
+                                subtitle: folder.description,
+                                icon: icon,
+                                color: color,
+                                isSelected: isSelected,
+                                onTap: () {
+                                  Navigator.pop(
+                                    context,
+                                    _FolderSelectionResult(
+                                      folderId: folder.id,
+                                      folderName: folder.name,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildFolderOption(
+    BuildContext context, {
+    required String title,
+    String? subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.18),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle:
+          subtitle == null || subtitle.isEmpty
+              ? null
+              : Text(
+                subtitle,
+                style: TextStyle(color: Colors.grey[500]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+      trailing:
+          isSelected
+              ? const Icon(Icons.check, color: Color(0xFF3B82F6))
+              : null,
     );
   }
 }

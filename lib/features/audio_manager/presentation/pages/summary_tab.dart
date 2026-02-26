@@ -78,7 +78,7 @@ class _SummaryTabState extends State<SummaryTab> {
     if (summaryText.trim().isEmpty) {
       return quill.QuillController.basic();
     }
-    
+
     try {
       // Try to parse as JSON delta first
       dynamic jsonData = jsonDecode(summaryText);
@@ -87,7 +87,7 @@ class _SummaryTabState extends State<SummaryTab> {
       if (jsonData is String) {
         jsonData = jsonDecode(jsonData);
       }
-      
+
       final doc = quill.Document.fromJson(jsonData);
       return quill.QuillController(
         document: doc,
@@ -141,15 +141,9 @@ class _SummaryTabState extends State<SummaryTab> {
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[100],
-              border: Border(
-                bottom: BorderSide(color: Colors.grey[300]!),
-              ),
+              border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
             ),
-            child: quill.QuillToolbar.simple(
-              configurations: quill.QuillSimpleToolbarConfigurations(
-                controller: _controller,
-                sharedConfigurations: const quill.QuillSharedConfigurations(),
-              ),
+            child: quill.QuillSimpleToolbar(controller: _controller,
             ),
           ),
         Expanded(
@@ -162,12 +156,10 @@ class _SummaryTabState extends State<SummaryTab> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: quill.QuillEditor.basic(
-                configurations: quill.QuillEditorConfigurations(
-                  controller: _controller,
-                  sharedConfigurations: const quill.QuillSharedConfigurations(),
-                  placeholder: 'Summary content...',
-                ),
+              child: quill.QuillEditor(
+                controller: _controller,
+                scrollController: ScrollController(),
+                focusNode: FocusNode(),
               ),
             ),
           ),
@@ -179,7 +171,7 @@ class _SummaryTabState extends State<SummaryTab> {
               color: const Color(0xFF101822),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -187,17 +179,102 @@ class _SummaryTabState extends State<SummaryTab> {
             ),
             child: SafeArea(
               top: false,
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _handleSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Row(
+                children: [
+                  // Re-summarize button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _handleGenerateSummary,
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF282E39),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.refresh, color: Colors.white, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Re-summary',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  child: const Text('Save Summary'),
-                ),
+                  const SizedBox(width: 12),
+                  // Save button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _handleSave,
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Save',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.save, color: Colors.white, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Export button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        // TODO: Implement export functionality
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Export functionality coming soon'),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF282E39),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.download, color: Colors.white, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Export',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -216,10 +293,7 @@ class _SummaryTabState extends State<SummaryTab> {
             const SizedBox(height: 24),
             const Text(
               'Summary Not Available',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -249,10 +323,7 @@ class _SummaryTabState extends State<SummaryTab> {
             const SizedBox(height: 24),
             const Text(
               'No Summary Available',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

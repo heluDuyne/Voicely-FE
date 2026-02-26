@@ -291,9 +291,9 @@ class _TranscriptionPageState extends State<TranscriptionPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
                 widget.meetingTitle ?? 'Meeting with Design Team',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
-                  color: Colors.grey[400],
+                  color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,

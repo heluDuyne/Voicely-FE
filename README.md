@@ -6,7 +6,64 @@
 
 ## Screenshots
 
-> _Add screenshots or GIFs of the app here (recording screen, transcript view, summary view, chatbot, etc.)_
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/app_demo_image/welcome.png" width="200"/><br/>
+      <b>Welcome</b><br/>Landing screen introducing the app
+    </td>
+    <td align="center">
+      <img src="assets/app_demo_image/signin.png" width="200"/><br/>
+      <b>Sign In</b><br/>User login with email & password
+    </td>
+    <td align="center">
+      <img src="assets/app_demo_image/signup.png" width="200"/><br/>
+      <b>Sign Up</b><br/>New account registration
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/app_demo_image/home_page.png" width="200"/><br/>
+      <b>Home</b><br/>Main dashboard with quick actions
+    </td>
+    <td align="center">
+      <img src="assets/app_demo_image/audio_management.png" width="200"/><br/>
+      <b>Audio Manager</b><br/>Browse and play saved recordings
+    </td>
+    <td align="center">
+      <img src="assets/app_demo_image/folder_management.png" width="200"/><br/>
+      <b>Folder Management</b><br/>Organize recordings into folders
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/app_demo_image/transcript_screen.png" width="200"/><br/>
+      <b>Transcript</b><br/>Speech-to-text transcription result
+    </td>
+    <td align="center">
+      <img src="assets/app_demo_image/summarize_screen.png" width="200"/><br/>
+      <b>AI Summary</b><br/>AI-generated summary of recording
+    </td>
+    <td align="center">
+      <img src="assets/app_demo_image/chatbot_screen.png" width="200"/><br/>
+      <b>AI Chatbot</b><br/>Chat with AI about your recordings
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/app_demo_image/pending_task.png" width="200"/><br/>
+      <b>Pending Tasks</b><br/>Recordings queued for processing
+    </td>
+    <td align="center">
+      <img src="assets/app_demo_image/Notification.png" width="200"/><br/>
+      <b>Notifications</b><br/>Push notification center
+    </td>
+    <td align="center">
+      <img src="assets/app_demo_image/user_management.png" width="200"/><br/>
+      <b>User Profile</b><br/>View and edit account information
+    </td>
+  </tr>
+</table>
 
 ---
 

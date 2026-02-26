@@ -2,10 +2,10 @@ class AppConstants {
   // API for android emulator
   // static const String baseUrl =
   //     'http://10.0.2.2:8000';
-  // static const String baseUrl =
-  //     'http://10.0.2.2:8000'; // Localhost for Android emulator
   static const String baseUrl =
-      'https://congregational-bula-coaxingly.ngrok-free.dev'; // Localhost for Android emulator
+      'http://10.0.2.2:8000'; // Localhost for Android emulator
+  //   static const String baseUrl =
+  //       'https://congregational-bula-coaxingly.ngrok-free.dev'; // Localhost for Android emulator
   // static const String apiVersion = '/v1'; // Commented out API version prefix
 
   // Endpoints

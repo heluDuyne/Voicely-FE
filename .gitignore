@@ -45,3 +45,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 # /android/app/google-services.json google-services.json is usually not considered to be private
+
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
